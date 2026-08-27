@@ -5,6 +5,8 @@
 #ifndef mozilla_dom_AndroidWebAuthnService_h_
 #define mozilla_dom_AndroidWebAuthnService_h_
 
+#include <android/log.h>
+
 #include "mozilla/java/WebAuthnTokenManagerNatives.h"
 #include "nsIWebAuthnService.h"
 

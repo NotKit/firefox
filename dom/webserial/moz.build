@@ -35,7 +35,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
 elif (
     (CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] != "iOS")
     or CONFIG["OS_TARGET"] == "FreeBSD"
-    or CONFIG["OS_TARGET"] == "Linux"
+    or (CONFIG["OS_TARGET"] == "Linux" and CONFIG["MOZ_WIDGET_TOOLKIT"] != "android")
 ):
     UNIFIED_SOURCES += [
         "PosixSerialPlatformService.cpp",

@@ -32,7 +32,7 @@
 #    include "base/message_pump_glib.h"
 #  endif
 #endif
-#ifdef ANDROID
+#if defined(ANDROID) || defined(MOZ_WIDGET_ANDROID)
 #  include "base/message_pump_android.h"
 #endif
 #include "nsISerialEventTarget.h"

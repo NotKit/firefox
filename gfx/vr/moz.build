@@ -58,7 +58,7 @@ SOURCES += [
     "VRShMem.cpp",
 ]
 
-if CONFIG["OS_TARGET"] == "Android":
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     LOCAL_INCLUDES += ["/widget/android"]
 else:
     DIRS += [

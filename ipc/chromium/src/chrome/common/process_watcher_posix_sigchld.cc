@@ -36,8 +36,9 @@
 #endif
 
 // Just to make sure the moz.build is doing the right things with
-// TARGET_OS and/or OS_TARGET:
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
+// TARGET_OS and/or OS_TARGET.  Test the OS, not the widget toolkit: the
+// android toolkit can target a plain Linux, which reaps children normally.
+#if defined(ANDROID) || defined(XP_IOS)
 #  error Unsupported OS
 #endif
 

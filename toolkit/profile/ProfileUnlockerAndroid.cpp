@@ -4,6 +4,7 @@
 
 #include "ProfileUnlockerAndroid.h"
 #include "nsPrintfCString.h"
+#include <signal.h>
 #include <unistd.h>
 
 namespace mozilla {
