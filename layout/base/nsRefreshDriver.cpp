@@ -16,6 +16,7 @@
  */
 
 #include "nsRefreshDriver.h"
+#include <android/log.h>
 
 #include "mozilla/DataMutex.h"
 #include "mozilla/dom/VideoFrameProvider.h"
@@ -917,6 +918,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
   void StartTimer() override {
     MOZ_ASSERT(NS_IsMainThread());
+    __android_log_print(4, "ATLTRACE", "VsyncRDTimer::StartTimer disp=%p child=%p",
+                        (void*)mVsyncDispatcher.get(), (void*)mVsyncChild.get());
 
     mLastFireTime = TimeStamp::Now();
     mLastFireId = VsyncId();
@@ -1212,6 +1215,8 @@ void nsRefreshDriver::CreateVsyncRefreshTimer() {
       }
     }
   }
+  __android_log_print(4, "ATLTRACE", "CreateVsyncRefreshTimer own=%p regular=%p",
+                      (void*)mOwnTimer.get(), (void*)sRegularRateTimer.get());
   if (!sRegularRateTimer) {
     if (XRE_IsParentProcess()) {
       // Make sure all vsync systems are ready.
@@ -2585,6 +2590,8 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   UpdateAnimatedImages(previousRefresh, aNowTime);
 
   bool painted = false;
+  __android_log_print(4, "ATLTRACE", "Tick rd=%p paintPhase=%d", (void*)this,
+                      (int)mRenderingPhasesNeeded.contains(RenderingPhase::Paint));
   RunRenderingPhaseLegacy(
       RenderingPhase::Paint,
       [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA { painted = PaintIfNeeded(); });
@@ -2629,6 +2636,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 }
 
 bool nsRefreshDriver::PaintIfNeeded() {
+  __android_log_print(4, "ATLTRACE",
+                      "PaintIfNeeded rd=%p throttled=%d suppressed=%d", (void*)this,
+                      (int)mThrottled,
+                      (int)(mPresContext ? mPresContext->Document()->IsRenderingSuppressed() : -1));
   if (mThrottled) {
     return false;
   }
@@ -2962,6 +2973,8 @@ bool nsRefreshDriver::IsRefreshObserver(nsARefreshObserver* aObserver,
 #endif
 
 void nsRefreshDriver::SchedulePaint() {
+  __android_log_print(4, "ATLTRACE", "SchedulePaint rd=%p throttled=%d", (void*)this,
+                      (int)mThrottled);
   NS_ASSERTION(mPresContext && mPresContext->IsRoot(),
                "Should only schedule view manager flush on root prescontexts");
   if (!mPaintCause) {

@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#define FORCE_ALOG 1
 #include "nsWindow.h"
 
 #include <android/bitmap.h>
@@ -157,8 +158,10 @@ template <class Lambda>
 bool DispatchToUiThread(const char* aName, Lambda&& aLambda) {
   if (RefPtr<nsThread> uiThread = GetAndroidUiThread()) {
     uiThread->Dispatch(NS_NewRunnableFunction(aName, std::move(aLambda)));
+    __android_log_print(4, "ATLTRACE", "DispatchToUiThread OK %s", aName);
     return true;
   }
+  __android_log_print(4, "ATLTRACE", "DispatchToUiThread NO-UI-THREAD %s", aName);
   return false;
 }
 }  // namespace
@@ -731,6 +734,10 @@ class NPZCSupport final
         java::PanZoomController::MotionEventData::Ref::From(aEventData);
     nsTArray<int32_t> pointerId(eventData->PointerId()->GetElements());
     size_t pointerCount = pointerId.Length();
+    __android_log_print(4, "ATLTRACE",
+                        "HandleMotionEvent action=%d pointers=%zu time=%lld",
+                        eventData->Action(), pointerCount,
+                        (long long)eventData->Time());
     MultiTouchInput::MultiTouchType type;
     size_t startIndex = 0;
     size_t endIndex = pointerCount;
@@ -858,6 +865,8 @@ class NPZCSupport final
       mTouchResamplingEnabled = StaticPrefs::android_touch_resampling_enabled();
     }
 
+    __android_log_print(4, "ATLTRACE", "HandleMotionEvent type=%d resampling=%d",
+                        (int)type, (int)mTouchResamplingEnabled);
     if (!mTouchResamplingEnabled) {
       FinishHandlingMotionEvent(std::move(input),
                                 java::GeckoResult::LocalRef(returnResult));
@@ -986,6 +995,8 @@ class NPZCSupport final
       }
     }
 
+    __android_log_print(4, "ATLTRACE", "FinishHandlingMotionEvent type=%d apzc=%p",
+                        (int)aInput.mType, (void*)controller.get());
     if (!controller) {
       if (aReturnResult) {
         aReturnResult->Complete(java::PanZoomController::InputResultDetail::New(
@@ -1006,6 +1017,8 @@ class NPZCSupport final
     }
     APZEventResult result =
         controller->Bridge()->ReceiveInputEvent(aInput, std::move(callback));
+    __android_log_print(4, "ATLTRACE", "ReceiveInputEvent type=%d status=%d",
+                        (int)aInput.mType, (int)result.GetStatus());
 
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       if (aReturnResult) {
@@ -1203,6 +1216,8 @@ class LayerViewSupport final
   void NotifyCompositorCreated(
       RefPtr<UiCompositorControllerChild> aUiCompositorControllerChild) {
     MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
+    __android_log_print(4, "ATLTRACE", "NotifyCompositorCreated child=%p",
+                        (void*)aUiCompositorControllerChild.get());
     mUiCompositorControllerChild = aUiCompositorControllerChild;
 
     if (mDefaultClearColor) {
@@ -1303,6 +1318,8 @@ class LayerViewSupport final
   void OnBoundsChanged(int32_t aLeft, int32_t aTop, int32_t aWidth,
                        int32_t aHeight) {
     MOZ_ASSERT(NS_IsMainThread());
+    __android_log_print(4, "ATLTRACE", "OnBoundsChanged %d,%d %dx%d", aLeft,
+                        aTop, aWidth, aHeight);
     auto acc = mWindow.Access();
     if (!acc) {
       return;  // Already shut down.
@@ -1437,6 +1454,8 @@ class LayerViewSupport final
       int32_t aWidth, int32_t aHeight, jni::Object::Param aSurface,
       jni::Object::Param aSurfaceControl) {
     MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
+    __android_log_print(4, "ATLTRACE", "SyncResumeResizeCompositor %d,%d %dx%d",
+                        aX, aY, aWidth, aHeight);
 
     // Set this false prior to attempting to resume the compositor, so that if
     // resumption fails the subsequent recovery knows to initialize the
@@ -1592,6 +1611,8 @@ class LayerViewSupport final
   }
 
   void SendToolbarAnimatorMessage(int32_t aMessage) {
+    __android_log_print(4, "ATLTRACE", "SendToolbarAnimatorMessage %d child=%p",
+                        aMessage, (void*)mUiCompositorControllerChild.get());
     if (!mUiCompositorControllerChild) {
       return;
     }
@@ -1948,6 +1969,9 @@ void GeckoViewSupport::Transfer(const GeckoSession::Window::LocalRef& inst,
         jni::NativeWeakPtrHolder<LayerViewSupport>::Attach(
             compositor, mWindow->mGeckoViewSupport, compositor);
 
+    __android_log_print(4, "ATLTRACE", "Transfer attachLvs uicc=%p renderer=%p",
+                        (void*)mWindow->GetUiCompositorControllerChild().get(),
+                        (void*)mWindow->mWindowRenderer.get());
     if (RefPtr<UiCompositorControllerChild> uiCompositorController =
             mWindow->GetUiCompositorControllerChild()) {
       DispatchToUiThread(
@@ -2907,7 +2931,8 @@ double nsWindow::GetDefaultScaleInternal() {
 }
 
 void nsWindow::Show(bool aState) {
-  ALOG("nsWindow[%p]::Show %d", (void*)this, aState);
+  __android_log_print(4, "ATLTRACE", "nsWindow[%p]::Show %d type=%d", (void*)this,
+                      (int)aState, (int)mWindowType);
 
   if (mWindowType == WindowType::Invisible) {
     ALOG("trying to show invisible window! ignoring..");
@@ -2983,8 +3008,9 @@ void nsWindow::Resize(const DesktopRect& aRect, bool aRepaint) {
 
 void nsWindow::DoResize(double aX, double aY, double aWidth, double aHeight,
                         bool aRepaint) {
-  ALOG("nsWindow[%p]::DoResize [%f %f %f %f] (repaint %d)", this, aX, aY,
-       aWidth, aHeight, aRepaint);
+  __android_log_print(4, "ATLTRACE", "nsWindow[%p]::DoResize %fx%f repaint=%d listener=%p",
+                      (void*)this, aWidth, aHeight, (int)aRepaint,
+                      (void*)GetWidgetListener());
 
   LayoutDeviceIntRect oldBounds = mBounds;
 
@@ -3148,6 +3174,8 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
 }
 
 mozilla::WindowRenderer* nsWindow::GetWindowRenderer() {
+  __android_log_print(4, "ATLTRACE", "GetWindowRenderer [%p] renderer=%p", (void*)this,
+                      (void*)mWindowRenderer.get());
   if (!mWindowRenderer) {
     CreateLayerManager();
   }
@@ -3156,6 +3184,8 @@ mozilla::WindowRenderer* nsWindow::GetWindowRenderer() {
 }
 
 void nsWindow::CreateLayerManager() {
+  __android_log_print(4, "ATLTRACE", "CreateLayerManager enter renderer=%p",
+                      (void*)mWindowRenderer.get());
   if (mWindowRenderer) {
     return;
   }
@@ -3163,15 +3193,23 @@ void nsWindow::CreateLayerManager() {
   nsWindow* topLevelWindow = FindTopLevel();
   if (!topLevelWindow || topLevelWindow->mWindowType == WindowType::Invisible) {
     // don't create a layer manager for an invisible top-level window
+    __android_log_print(4, "ATLTRACE", "CreateLayerManager: invisible/no toplevel");
     return;
   }
 
   // Ensure that gfxPlatform is initialized first.
   gfxPlatform::GetPlatform();
 
+  __android_log_print(4, "ATLTRACE", "CreateLayerManager omtc=%d",
+                      (int)ShouldUseOffMainThreadCompositing());
   if (ShouldUseOffMainThreadCompositing()) {
     LayoutDeviceIntRect rect = GetBounds();
+    __android_log_print(4, "ATLTRACE", "CreateCompositor %dx%d", rect.Width(),
+                        rect.Height());
     CreateCompositor(rect.Width(), rect.Height());
+    __android_log_print(4, "ATLTRACE", "CreateCompositor done renderer=%p lvs=%d",
+                        (void*)mWindowRenderer.get(),
+                        (int)mLayerViewSupport.IsAttached());
     if (mWindowRenderer) {
       if (mLayerViewSupport.IsAttached()) {
         DispatchToUiThread(
@@ -3703,8 +3741,18 @@ bool nsWindow::WidgetPaintsBackground() {
 }
 
 bool nsWindow::NeedsPaint() {
+  // Ask for the renderer before looking at the paused state, not after. The
+  // compositor starts out paused and only the Java side can resume it, and it
+  // only learns the compositor exists when creating the session sends
+  // COMPOSITOR_CONTROLLER_OPEN up. Checking CompositorPaused() first means the
+  // session is never created, so that message is never sent and the compositor
+  // stays paused forever.
+  WindowRenderer* renderer = GetWindowRenderer();
   auto lvs(mLayerViewSupport.Access());
-  if (!lvs || lvs->CompositorPaused() || !GetWindowRenderer()) {
+  __android_log_print(4, "ATLTRACE", "NeedsPaint lvs=%d paused=%d renderer=%p",
+                      (int)!!lvs, (int)(lvs ? lvs->CompositorPaused() : -1),
+                      (void*)renderer);
+  if (!lvs || lvs->CompositorPaused() || !renderer) {
     return false;
   }
 

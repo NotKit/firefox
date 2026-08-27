@@ -31,6 +31,7 @@
 #include "mozilla/jni/Utils.h"
 #include "mozilla/layers/AndroidHardwareBuffer.h"
 #include "mozilla/widget/AndroidVsync.h"
+#include <android/log.h>
 #include "nsIScreen.h"
 #include "nsServiceManagerUtils.h"
 #include "nsUnicodeProperties.h"
@@ -471,6 +472,7 @@ class AndroidVsyncSource final : public VsyncSource,
     }
 
     float fps = java::GeckoAppShell::GetScreenRefreshRate();
+    __android_log_print(4, "ATLTRACE", "EnableVsync fps=%f", (double)fps);
     MOZ_ASSERT(fps > 0.0f);
     mVsyncRate = TimeDuration::FromMilliseconds(1000.0 / fps);
     mAndroidVsync->RegisterObserver(this, widget::AndroidVsync::RENDER);

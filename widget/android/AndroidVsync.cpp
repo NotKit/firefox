@@ -6,6 +6,7 @@
 
 #include "AndroidBridge.h"
 #include "nsTArray.h"
+#include <android/log.h>
 
 /**
  * Implementation for the AndroidVsync class.
@@ -107,12 +108,20 @@ void AndroidVsync::Impl::UpdateObservingVsync() {
       !mInputObservers.IsEmpty() || !mRenderObservers.IsEmpty();
   if (shouldObserve != mObservingVsync) {
     mObservingVsync = mSupportJava->ObserveVsync(shouldObserve);
+    __android_log_print(4, "ATLTRACE", "ObserveVsync(%d) -> %d",
+                        (int)shouldObserve, (int)mObservingVsync);
   }
 }
 
 // Always called on the Java UI thread.
 void AndroidVsync::NotifyVsync(int64_t aFrameTimeNanos) {
   MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
+  static int sCount = 0;
+  if (sCount < 5 || (sCount % 60) == 0) {
+    __android_log_print(4, "ATLTRACE", "NotifyVsync #%d t=%lld", sCount,
+                        (long long)aFrameTimeNanos);
+  }
+  sCount++;
 
   // Convert aFrameTimeNanos to a TimeStamp. The value converts trivially to
   // the internal ticks representation of TimeStamp_posix; both use the
