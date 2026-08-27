@@ -178,29 +178,102 @@ public final class GeckoLoader {
     loadLibsSetupLocked(context);
   }
 
-  // Adapted from
-  // https://source.chromium.org/chromium/chromium/src/+/main:base/android/java/src/org/chromium/base/BundleUtils.java;l=196;drc=c0fedddd4a1444653235912cfae3d44b544ded01
   private static String getLibraryPath(final String libraryName) {
-    // Due to b/171269960 isolated split class loaders have an empty library path, so check
-    // the base module class loader first which loaded GeckoAppShell. If the library is not
-    // found there, attempt to construct the correct library path from the split.
-    String path =
-        ((BaseDexClassLoader) GeckoAppShell.class.getClassLoader()).findLibrary(libraryName);
+    String path = findLibraryInDexClassLoaders(libraryName);
     if (path != null) {
       return path;
     }
 
-    // SplitCompat is installed on the application context, so check there for library paths
-    // which were added to that ClassLoader.
-    final ClassLoader classLoader = GeckoAppShell.getApplicationContext().getClassLoader();
-    if (classLoader instanceof BaseDexClassLoader) {
-      path = ((BaseDexClassLoader) classLoader).findLibrary(libraryName);
-      if (path != null) {
-        return path;
-      }
+    // A runtime with no dalvik class loaders -- GeckoView embedded in a plain JVM -- reaches
+    // neither branch above, so ask the platform where its libraries live instead.
+    path = findLibraryOutsideDexClassLoaders(libraryName);
+    if (path != null) {
+      return path;
     }
 
-    throw new RuntimeException("Could not find mozglue path.");
+    throw new RuntimeException("Could not find " + libraryName + " path.");
+  }
+
+  // Adapted from
+  // https://source.chromium.org/chromium/chromium/src/+/main:base/android/java/src/org/chromium/base/BundleUtils.java;l=196;drc=c0fedddd4a1444653235912cfae3d44b544ded01
+  //
+  // Kept in a method of its own so that on a runtime with no dalvik.system only this one
+  // fails to link; the caller reads that as "not found" and moves on.
+  private static String findLibraryInDexClassLoaders(final String libraryName) {
+    try {
+      // Due to b/171269960 isolated split class loaders have an empty library path, so check
+      // the base module class loader first which loaded GeckoAppShell. If the library is not
+      // found there, attempt to construct the correct library path from the split.
+      final ClassLoader baseLoader = GeckoAppShell.class.getClassLoader();
+      if (baseLoader instanceof BaseDexClassLoader) {
+        final String path = ((BaseDexClassLoader) baseLoader).findLibrary(libraryName);
+        if (path != null) {
+          return path;
+        }
+      }
+
+      // SplitCompat is installed on the application context, so check there for library paths
+      // which were added to that ClassLoader.
+      final ClassLoader classLoader = GeckoAppShell.getApplicationContext().getClassLoader();
+      if (classLoader instanceof BaseDexClassLoader) {
+        return ((BaseDexClassLoader) classLoader).findLibrary(libraryName);
+      }
+    } catch (final LinkageError e) {
+      // dalvik.system.BaseDexClassLoader does not exist here.
+      Log.d(LOGTAG, "No dex class loaders on this runtime: " + e);
+    }
+    return null;
+  }
+
+  /**
+   * The non-Android answer: an embedder's explicit MOZ_ANDROID_LIBDIR, then the package's
+   * native library directory, then java.library.path -- i.e. the directories the runtime's
+   * own System.loadLibrary() searches.
+   */
+  private static String findLibraryOutsideDexClassLoaders(final String libraryName) {
+    final String fileName = System.mapLibraryName(libraryName);
+    final StringBuilder dirs = new StringBuilder();
+
+    appendDir(dirs, System.getenv("MOZ_ANDROID_LIBDIR"));
+    appendDir(dirs, getNativeLibraryDir());
+    appendDir(dirs, System.getProperty("java.library.path"));
+
+    for (final String dir : dirs.toString().split(File.pathSeparator)) {
+      if (dir.isEmpty()) {
+        continue;
+      }
+      final File candidate = new File(dir, fileName);
+      if (candidate.isFile()) {
+        Log.d(LOGTAG, "Found " + fileName + " in " + dir);
+        return candidate.getPath();
+      }
+    }
+    return null;
+  }
+
+  private static void appendDir(final StringBuilder dirs, final String dir) {
+    if (dir == null || dir.isEmpty()) {
+      return;
+    }
+    if (dirs.length() > 0) {
+      dirs.append(File.pathSeparator);
+    }
+    dirs.append(dir);
+  }
+
+  /**
+   * Where the package manager unpacked this app's libraries, or null if there is no package
+   * manager to ask. Asking must not be able to abort the lookup, so a runtime whose
+   * framework classes do not even link is treated the same as "no answer".
+   */
+  private static String getNativeLibraryDir() {
+    try {
+      final Context context = GeckoAppShell.getApplicationContext();
+      return context == null ? null : context.getApplicationInfo().nativeLibraryDir;
+    } catch (final LinkageError e) {
+      Log.d(LOGTAG, "No package native library dir: " + e);
+      return null;
+    }
   }
 
   private static String getLibraryBase() {
@@ -342,7 +415,9 @@ public final class GeckoLoader {
 
   private static boolean attemptLoad(final String path) {
     try {
-      System.loadLibrary(path);
+      // A full path, so System.load(): System.loadLibrary() takes a bare name and rejects
+      // this one with "Directory separator should not appear in library name".
+      System.load(path);
       return true;
     } catch (final Throwable e) {
       Log.wtf(LOGTAG, "Couldn't load " + path + ": " + e);

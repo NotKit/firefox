@@ -332,3 +332,11 @@ tasks.register("lint-a-c") {
     description = "(Deprecated) alias for :android-components:lint"
     dependsOn ":android-components:lint"
 }
+
+// [ATL] Desktop OpenJDK port: assemble a HotSpot class path instead of dex.
+// Applied only under -PfenixJvm, so an unflagged Mozilla build is unchanged.
+// The include lives outside this tree, in firefox-atl/jvm-run/fenixbuild/.
+if (project.hasProperty('fenixJvm')) {
+    apply from: file(project.findProperty('fenixJvmInclude')
+            ?: "${rootDir}/../firefox-atl/jvm-run/fenixbuild/jar-for-jvm.gradle")
+}
