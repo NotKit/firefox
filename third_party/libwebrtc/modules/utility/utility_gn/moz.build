@@ -63,6 +63,9 @@ if CONFIG["OS_TARGET"] == "Android":
         "log"
     ]
 
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+
+    # AttachThreadScoped, which the android video capturer uses.
     UNIFIED_SOURCES += [
         "/third_party/libwebrtc/modules/utility/source/helpers_android.cc"
     ]

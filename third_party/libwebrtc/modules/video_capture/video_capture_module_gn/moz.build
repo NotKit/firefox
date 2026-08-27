@@ -37,6 +37,12 @@ LOCAL_INCLUDES += [
     "/tools/profiler/public"
 ]
 
+# The factory picks its capture backend from WEBRTC_ANDROID, and
+# an android-toolkit build takes the android one whatever the target is.
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+
+    DEFINES["WEBRTC_ANDROID"] = True
+
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/modules/video_capture/device_info_impl.cc",
     "/third_party/libwebrtc/modules/video_capture/video_capture_factory.cc",

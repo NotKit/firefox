@@ -772,3 +772,15 @@ if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGE
         "/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn",
         "/third_party/libwebrtc/modules/desktop_capture/primitives_gn"
     ]
+
+# OS_TARGET includes desktop capture on Linux even with the Android toolkit.
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android" and CONFIG["OS_TARGET"] != "Android":
+    for _desktop_only in (
+        "/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn",
+        "/third_party/libwebrtc/modules/desktop_capture/desktop_capture_differ_sse2_gn",
+        "/third_party/libwebrtc/modules/desktop_capture/primitives_gn",
+        "/third_party/libwebrtc/modules/portal/portal_gn",
+        "/third_party/libwebrtc/third_party/libepoxy/libepoxy_gn",
+    ):
+        while _desktop_only in DIRS:
+            DIRS.remove(_desktop_only)

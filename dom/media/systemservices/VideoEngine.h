@@ -41,7 +41,7 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
   static already_AddRefed<VideoEngine> Create(
       const CaptureDeviceType& aCaptureDeviceType,
       RefPtr<VideoCaptureFactory> aVideoCaptureFactory);
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   static int SetAndroidObjects();
 #endif
   int32_t GenerateId();

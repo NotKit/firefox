@@ -19,7 +19,11 @@ if CONFIG["MOZ_WEBRTC"]:
 
     if CONFIG["OS_TARGET"] == "Linux":
         DEFINES["WEBRTC_LINUX"] = True
-        if (
+        # The capture and desktop backends are chosen by this define, and
+        # an android-toolkit build takes the android ones.
+        if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+            DEFINES["WEBRTC_ANDROID"] = True
+        if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android" and (
             CONFIG["TARGET_CPU"] == "x86"
             or CONFIG["TARGET_CPU"] == "x86_64"
             or CONFIG["TARGET_CPU"] == "arm"

@@ -97,12 +97,16 @@ if CONFIG["OS_TARGET"] == "Linux":
     DEFINES["__STDC_CONSTANT_MACROS"] = True
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
-    UNIFIED_SOURCES += [
-        "/third_party/libwebrtc/modules/video_capture/linux/device_info_linux.cc",
-        "/third_party/libwebrtc/modules/video_capture/linux/device_info_v4l2.cc",
-        "/third_party/libwebrtc/modules/video_capture/linux/video_capture_linux.cc",
-        "/third_party/libwebrtc/modules/video_capture/linux/video_capture_v4l2.cc"
-    ]
+    # The v4l2 capturer defines VideoCaptureImpl::Create, and so does the
+    # android one in dom/media/systemservices; an android-toolkit build takes
+    # the android one, as a real Android build does.
+    if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+        UNIFIED_SOURCES += [
+            "/third_party/libwebrtc/modules/video_capture/linux/device_info_linux.cc",
+            "/third_party/libwebrtc/modules/video_capture/linux/device_info_v4l2.cc",
+            "/third_party/libwebrtc/modules/video_capture/linux/video_capture_linux.cc",
+            "/third_party/libwebrtc/modules/video_capture/linux/video_capture_v4l2.cc"
+        ]
 
 if CONFIG["OS_TARGET"] == "OpenBSD":
 
@@ -264,7 +268,11 @@ if CONFIG["OS_TARGET"] == "Android" and CONFIG["TARGET_CPU"] == "x86":
         "-msse2"
     ]
 
-if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
+if (
+    CONFIG["OS_TARGET"] == "Linux"
+    and CONFIG["TARGET_CPU"] == "aarch64"
+    and CONFIG["MOZ_WIDGET_TOOLKIT"] != "android"
+):
 
     DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
@@ -281,7 +289,11 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
         "/third_party/libwebrtc/modules/video_capture/linux/video_capture_pipewire.cc"
     ]
 
-if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "arm":
+if (
+    CONFIG["OS_TARGET"] == "Linux"
+    and CONFIG["TARGET_CPU"] == "arm"
+    and CONFIG["MOZ_WIDGET_TOOLKIT"] != "android"
+):
 
     DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
@@ -298,7 +310,11 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "arm":
         "/third_party/libwebrtc/modules/video_capture/linux/video_capture_pipewire.cc"
     ]
 
-if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
+if (
+    CONFIG["OS_TARGET"] == "Linux"
+    and CONFIG["TARGET_CPU"] == "x86"
+    and CONFIG["MOZ_WIDGET_TOOLKIT"] != "android"
+):
 
     CXXFLAGS += [
         "-msse2"
@@ -319,7 +335,11 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
         "/third_party/libwebrtc/modules/video_capture/linux/video_capture_pipewire.cc"
     ]
 
-if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
+if (
+    CONFIG["OS_TARGET"] == "Linux"
+    and CONFIG["TARGET_CPU"] == "x86_64"
+    and CONFIG["MOZ_WIDGET_TOOLKIT"] != "android"
+):
 
     DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
