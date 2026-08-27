@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <android/log.h>
 #include "gfxPlatform.h"
 
 #include "GfxDriverInfo.h"
@@ -80,7 +81,7 @@
 #elif defined(MOZ_WIDGET_GTK)
 #  include "DMABufFormats.h"
 #  include "gfxPlatformGtk.h"
-#elif defined(ANDROID)
+#elif defined(MOZ_WIDGET_ANDROID)
 #  include "gfxAndroidPlatform.h"
 #endif
 #if defined(MOZ_WIDGET_ANDROID)
@@ -782,7 +783,7 @@ bool gfxPlatform::HasVariationFontSupport() {
     sHasVariationFontSupport = gfxPlatformMac::CheckVariationFontSupport();
 #elif defined(MOZ_WIDGET_GTK)
     sHasVariationFontSupport = gfxPlatformGtk::CheckVariationFontSupport();
-#elif defined(ANDROID)
+#elif defined(MOZ_WIDGET_ANDROID)
     sHasVariationFontSupport = gfxAndroidPlatform::CheckVariationFontSupport();
 #else
 #  error "No gfxPlatform implementation available"
@@ -921,7 +922,7 @@ void gfxPlatform::Init() {
   gPlatform = new gfxPlatformMac;
 #elif defined(MOZ_WIDGET_GTK)
   gPlatform = new gfxPlatformGtk;
-#elif defined(ANDROID)
+#elif defined(MOZ_WIDGET_ANDROID)
   gPlatform = new gfxAndroidPlatform;
 #else
 #  error "No gfxPlatform implementation available"
@@ -1101,8 +1102,12 @@ void gfxPlatform::ReportTelemetry() {
 
 // Android description is constructed in a way that makes it possible to exceed
 // the metric's length limit.
-#if defined(ANDROID)
-  if (!adapterDesc.IsEmpty()) {
+#if defined(MOZ_WIDGET_ANDROID)
+  // Truncate() release-asserts that it is not being asked to lengthen, so the
+  // length has to be checked: a device whose Build.MODEL/PRODUCT/MANUFACTURER/
+  // HARDWARE are all unset and whose GL strings are still empty produces a
+  // description of about 92 characters and crashed here.
+  if (adapterDesc.Length() > 99) {
     adapterDesc.Truncate(99);
   }
 #endif
@@ -2487,6 +2492,8 @@ void gfxPlatform::InitWebRenderConfig() {
       gfxConfig::IsEnabled(Feature::WEBRENDER_OPTIMIZED_SHADERS));
 
   gfxVars::SetUseSoftwareWebRender(!hasHardware);
+  __android_log_print(4, "ATLTRACE", "WebRender: software=%d",
+                      (int)!hasHardware);
 
   Preferences::RegisterPrefixCallbackAndCall(SwapIntervalPrefChangeCallback,
                                              "gfx.swap-interval");

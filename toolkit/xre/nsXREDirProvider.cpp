@@ -1181,7 +1181,7 @@ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
   const char* homeDir = PR_GetEnv("HOME");
   if (!homeDir || !*homeDir) return NS_ERROR_FAILURE;
 
-#  ifdef ANDROID /* We want (ProfD == ProfLD) on Android. */
+#  ifdef MOZ_WIDGET_ANDROID /* We want (ProfD == ProfLD) on Android. */
   MOZ_TRY(NS_NewNativeLocalFile(nsDependentCString(homeDir),
                                 getter_AddRefs(localDir)));
 #  else
@@ -1194,7 +1194,7 @@ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
     MOZ_TRY(nsXREDirProvider::GetLegacyOrXDGHomePath(
         homeDir, getter_AddRefs(localDir), aForceLegacy));
   }
-#  endif  // ANDROID
+#  endif  // MOZ_WIDGET_ANDROID
 #else
 #  error "Don't know how to get product dir on your platform"
 #endif
@@ -1621,7 +1621,7 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
-#elif defined(ANDROID)
+#elif defined(MOZ_WIDGET_ANDROID)
   // The directory used for storing profiles
   // The parent of this directory is set in GetUserDataDirectoryHome
   // XXX: handle gAppData->profile properly

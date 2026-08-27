@@ -4,6 +4,10 @@
 
 #include "gfxPlatformFontList.h"
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include <android/log.h>
+#endif
+
 #include "FontVisibilityProvider.h"
 #include "GeckoProfiler.h"
 #include "SharedFontList-impl.h"
@@ -2282,6 +2286,23 @@ void gfxPlatformFontList::ResolveGenericFontNames(
                                      genericFamilies, langGroup,
                                      aGenericFamilies);
 
+#ifdef MOZ_WIDGET_ANDROID
+  if (getenv("ATL_TRACE_FONTS")) {
+    nsAutoCString names;
+    for (const auto& f : genericFamilies) {
+      names.Append(f);
+      names.Append('|');
+    }
+    __android_log_print(4, "ATLFONT",
+                        "ResolveGeneric generic=%s lang=%s prefnames=[%s] "
+                        "resolved=%zu families=%u",
+                        generic, langGroupStr, names.get(),
+                        (size_t)aGenericFamilies->Length(),
+                        SharedFontList() ? SharedFontList()->NumFamilies()
+                                         : mFontFamilies.Count());
+  }
+#endif
+
 #if 0  // dump out generic mappings
     printf("%s ===> ", NamePref(generic, langGroupStr).get());
     for (uint32_t k = 0; k < aGenericFamilies->Length(); k++) {
@@ -3336,6 +3357,10 @@ void gfxPlatformFontList::FontPrefs::Init() {
       }
     }
   }
+  // GetChildList appends, so the font.name.* names have to go before the
+  // font.name-list.* ones are collected; otherwise each of them is re-keyed by
+  // chopping 15 characters instead of 10 and lands in mFontNameList as junk.
+  prefNames.Clear();
   if (NS_SUCCEEDED(prefRootBranch->GetChildList(kNameListPrefix, prefNames))) {
     for (auto& prefName : prefNames) {
       nsAutoCString value;
@@ -3346,6 +3371,19 @@ void gfxPlatformFontList::FontPrefs::Init() {
     }
   }
   mEmojiHasUserValue = Preferences::HasUserValue("font.name-list.emoji");
+
+#ifdef MOZ_WIDGET_ANDROID
+  if (getenv("ATL_TRACE_FONTS")) {
+    __android_log_print(4, "ATLFONT", "FontPrefs::Init name=%u name-list=%u",
+                        mFontName.Count(), mFontNameList.Count());
+    for (auto iter = mFontNameList.ConstIter(); !iter.Done(); iter.Next()) {
+      nsAutoCString k(iter.Key());
+      nsAutoCString v(iter.Data());
+      __android_log_print(4, "ATLFONT", "  name-list.%s = %s", k.get(),
+                          v.get());
+    }
+  }
+#endif
 
   // Record the default CJK order, based on accept-lang settings and locale.
   eFontPrefLang tempPrefLangs[kMaxLenPrefLangList];

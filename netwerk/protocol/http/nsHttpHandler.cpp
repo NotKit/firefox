@@ -146,7 +146,7 @@ namespace mozilla::net {
 LazyLogModule gHttpLog("nsHttp");
 LazyLogModule gHttpIOLog("HttpIO");
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 static nsCString GetDeviceModelId() {
   // Assumed to be running on the main thread
   // We need the device property in either case
@@ -470,7 +470,7 @@ nsresult nsHttpHandler::Init() {
 
   mRequestContextService = RequestContextService::GetOrCreate();
 
-#if defined(ANDROID) || defined(XP_IOS)
+#if defined(MOZ_WIDGET_ANDROID) || defined(XP_IOS)
   mProductSub.AssignLiteral(MOZILLA_UAVERSION);
 #else
   mProductSub.AssignLiteral(LEGACY_UA_GECKO_TRAIL);
@@ -1107,7 +1107,7 @@ void nsHttpHandler::InitUserAgentComponents() {
 
   // Gather platform.
   mPlatform.AssignLiteral(
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
       "Android"
 #elif defined(XP_WIN)
       "Windows"
@@ -1130,7 +1130,7 @@ void nsHttpHandler::InitUserAgentComponents() {
   }
 #endif
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   nsCOMPtr<nsIPropertyBag2> infoService;
   infoService = mozilla::components::SystemInfo::Service();
   MOZ_ASSERT(infoService, "Could not find a system info service");
@@ -1183,7 +1183,7 @@ void nsHttpHandler::InitUserAgentComponents() {
   if (Preferences::GetBool(UA_PREF("use_device"), false)) {
     mDeviceModelId = mozilla::net::GetDeviceModelId();
   }
-#endif  // ANDROID
+#endif  // MOZ_WIDGET_ANDROID
 
 #if defined(XP_IOS)
   // Freeze the iOS version to 18.0, use an underscore separator to avoid
@@ -1218,7 +1218,7 @@ void nsHttpHandler::InitUserAgentComponents() {
 
 #elif defined(XP_MACOSX)
   mOscpu.AssignLiteral("Intel Mac OS X 10.15");
-#elif defined(ANDROID)
+#elif defined(MOZ_WIDGET_ANDROID)
   mOscpu.AssignLiteral("Linux armv81");
 #elif defined(XP_IOS)
   mOscpu.AssignLiteral("iPhone");
@@ -1327,7 +1327,7 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     mUserAgentIsDirty = true;
   }
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   // general.useragent.use_device
   if (PREF_CHANGED(UA_PREF("use_device"))) {
     if (Preferences::GetBool(UA_PREF("use_device"), false)) {
