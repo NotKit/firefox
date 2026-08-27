@@ -34,6 +34,7 @@
 #include "prdtoa.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/java/GeckoAppShellWrappers.h"
+#  include "mozilla/jni/Utils.h"
 #endif
 #ifdef XP_WIN
 #  include "mozilla/mscom/EnsureMTA.h"
@@ -449,6 +450,12 @@ void ForceUnsetCubebContext() {
 
 void SetInCommunication(bool aInCommunication) {
 #ifdef MOZ_WIDGET_ANDROID
+  // A fork/exec content child has no JVM, and SetCommunicationAudioModeOn
+  // below would dereference a null sJavaVM. There is no AudioManager mode to
+  // set off Android, so the count is not worth keeping either.
+  if (!jni::IsAvailable()) {
+    return;
+  }
   StaticMutexAutoLock lock(sMutex);
   if (aInCommunication) {
     sInCommunicationCount++;
@@ -1069,7 +1076,9 @@ bool EstimatedLatencyDefaultDevices(double* aMean, double* aStdDev,
 
 #ifdef MOZ_WIDGET_ANDROID
 int32_t AndroidGetAudioOutputSampleRate() {
-  if (java::GeckoAppShell::IsIsolatedProcess()) {
+  // A fork/exec content child has no JVM, so IsIsolatedProcess() below would
+  // dereference a null sJavaVM. It is exactly the isolated-process case.
+  if (!jni::IsAvailable() || java::GeckoAppShell::IsIsolatedProcess()) {
     return 44100;  // TODO: Remote value; will be handled in following patch.
   }
 
@@ -1077,7 +1086,7 @@ int32_t AndroidGetAudioOutputSampleRate() {
   return sample_rate;
 }
 int32_t AndroidGetAudioOutputFramesPerBuffer() {
-  if (java::GeckoAppShell::IsIsolatedProcess()) {
+  if (!jni::IsAvailable() || java::GeckoAppShell::IsIsolatedProcess()) {
     return 512;  // TODO: Remote value; will be handled in following patch.
   }
   int32_t frames = java::GeckoAppShell::GetAudioOutputFramesPerBuffer();

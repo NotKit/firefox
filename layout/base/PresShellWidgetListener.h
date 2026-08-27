@@ -12,6 +12,7 @@
 #include "nsIWidgetListener.h"
 
 class nsIWidget;
+class nsPresContext;
 
 namespace mozilla {
 class PresShell;
@@ -76,6 +77,12 @@ class PresShellWidgetListener final : public nsIWidgetListener {
   bool IsPrimaryFramePaintSuppressed() const;
 
  private:
+#ifdef MOZ_WIDGET_ANDROID
+  // The root content pres context in this process, for the e10s-off case where
+  // there is no BrowserParent to forward widget notifications to.
+  nsPresContext* GetInProcessContentPresContext();
+#endif
+
   void CallOnAllRemoteChildren(
       const std::function<mozilla::CallState(mozilla::dom::BrowserParent*)>&
           aCallback);

@@ -433,15 +433,24 @@ function createBrowser(settings) {
   browser.setAttribute("type", "content");
   browser.setAttribute("primary", "true");
   browser.setAttribute("flex", "1");
-  browser.setAttribute("maychangeremoteness", "true");
-  browser.setAttribute("remote", "true");
-  browser.setAttribute(
-    "remoteType",
-    ChromeUtils.predictRemoteTypeForURI(null, {
-      window,
-      geckoViewSessionContextId: settings.sessionContextId ?? undefined,
-    })
-  );
+  // ATL: GeckoView hard-codes a remote browser, so MOZ_FORCE_DISABLE_E10S
+  // never reaches this and the launcher thread dies trying to bind a child
+  // service the shell APK does not declare. Stay in the parent process until
+  // child processes work (B8). InitialLoadIsRemote asks GetBoolAttr, which is
+  // presence-based, so remote="false" would still be remote -- leave it off.
+  if (Services.appinfo.browserTabsRemoteAutostart) {
+    browser.setAttribute("maychangeremoteness", "true");
+    browser.setAttribute("remote", "true");
+    browser.setAttribute(
+      "remoteType",
+      ChromeUtils.predictRemoteTypeForURI(null, {
+        window,
+        geckoViewSessionContextId: settings.sessionContextId ?? undefined,
+      })
+    );
+  } else {
+    debug`ATL: e10s off, keeping the browser in the parent process`;
+  }
   browser.setAttribute("messagemanagergroup", "browsers");
   browser.setAttribute("manualactiveness", "true");
 
