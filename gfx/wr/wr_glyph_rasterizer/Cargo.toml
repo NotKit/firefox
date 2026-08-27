@@ -9,6 +9,9 @@ edition = "2018"
 [features]
 default = ["static_freetype"]
 dynamic_freetype = []
+# freetype is linked into the same binary, so the variable-font entry points
+# can be called directly instead of being looked up with dlsym.
+tree_freetype = []
 static_freetype = ["freetype/freetype-sys"]
 capture = ["api/serialize", "serde", "smallvec/serde"]
 replay = ["api/deserialize", "serde", "smallvec/serde"]

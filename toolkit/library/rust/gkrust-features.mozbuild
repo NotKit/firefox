@@ -18,6 +18,16 @@ if CONFIG["MOZ_TSAN"]:
 if CONFIG["MOZ_WEBRENDER_DEBUGGER"]:
     gkrust_features += ["webrender_debugger"]
 
+# The in-tree freetype ends up inside libxul and is hidden by its version
+# script, so WebRender has to call it directly rather than dlsym it.
+if CONFIG["MOZ_TREE_FREETYPE"]:
+    gkrust_features += ["tree_freetype"]
+
+# Rust answers target_os, but some of what it answers with is really a question
+# about the widget toolkit, which is android on targets rustc calls linux.
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    gkrust_features += ["platform_android"]
+
 if CONFIG["MOZ_PULSEAUDIO"]:
     gkrust_features += ["cubeb_pulse_rust"]
 
