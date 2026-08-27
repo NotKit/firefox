@@ -418,10 +418,14 @@ pub fn build_shader_prefix_string<F: FnMut(&str)>(
         // pref is disabled) we want to use the runtime value
         Err(_) => cfg!(target_os = "macos"),
     };
-    let is_android = match std::env::var("CARGO_CFG_TARGET_OS") {
-        Ok(os) => os == "android",
-        Err(_) => cfg!(target_os = "android"),
-    };
+    // Whether the android platform shaders are wanted follows the widget
+    // toolkit, not the rustc target: the external-texture sources this feeds
+    // are selected by the toolkit too.
+    let is_android = cfg!(feature = "platform_android")
+        || match std::env::var("CARGO_CFG_TARGET_OS") {
+            Ok(os) => os == "android",
+            Err(_) => cfg!(target_os = "android"),
+        };
     if is_macos {
         output("#define PLATFORM_MACOS\n");
         source_map.next_line();

@@ -83,7 +83,11 @@ pub fn adapt_bundle_for_gecko(bundle: &mut FluentBundleRc, pseudo_strategy: Opti
 
     bundle
         .add_function("PLATFORM", |_args, _named_args| {
-            if cfg!(target_os = "linux") {
+            // Has to agree with AppConstants.platform, which answers the
+            // widget toolkit and puts android ahead of linux for that reason.
+            if cfg!(feature = "platform_android") {
+                "android".into()
+            } else if cfg!(target_os = "linux") {
                 "linux".into()
             } else if cfg!(target_os = "windows") {
                 "windows".into()

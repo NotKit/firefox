@@ -9,6 +9,8 @@ edition = "2018"
 
 [features]
 serialize_program = ["serde"]
+# The widget toolkit is android even when the rustc target is not.
+platform_android = []
 
 [dependencies]
 bitflags = "2"

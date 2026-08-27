@@ -185,6 +185,8 @@ for_xul = [
     "rusqlite/in_gecko"
 ]
 webrender_debugger = ["webrender_bindings/debugger"]
+tree_freetype = ["webrender_bindings/tree_freetype"]
+platform_android = ["webrender_bindings/platform_android", "fluent-ffi/platform_android"]
 shell_windows = ["dep:shell_windows"]
 backgroundtaskregistrar = ["dep:backgroundtaskregistrar"]
 enable_tests = ["shell_windows?/enable_tests"]
