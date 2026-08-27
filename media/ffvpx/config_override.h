@@ -6,6 +6,12 @@
 #define CONFIG_CBS 1
 #undef CONFIG_CBS_VP9
 #define CONFIG_CBS_VP9 1
+// libavcodec/moz.build always builds libdav1d.c when video is on, and
+// config_unix_aarch64.h is the only such config with CONFIG_LIBDAV1D 0.
+// Without this, ff_av1_decoder (hwaccel-only) is the sole AV1 decoder and
+// FindSoftwareAVCodec hands it out as a software one.
+#undef CONFIG_LIBDAV1D
+#define CONFIG_LIBDAV1D 1
 #endif
 
 #undef CONFIG_FFT
