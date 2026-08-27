@@ -6,11 +6,16 @@
 #define MOZ_FFVPX_CONFIG_H
 
 #if defined(MOZ_FFVPX_AUDIOONLY)
-#  if defined(MOZ_WIDGET_ANDROID) && defined(__arm__)
+// __ANDROID__, not MOZ_WIDGET_ANDROID: an android-toolkit build against glibc
+// has the toolkit but no bionic and no MediaCodec, and the config_android*
+// headers set CONFIG_MEDIACODEC 1 while this build excludes the file that
+// defines ff_hwcontext_type_mediacodec (libavutil/moz.build only adds
+// hwcontext_mediacodec.c when the build is not audio-only).
+#  if defined(MOZ_WIDGET_ANDROID) && defined(__ANDROID__) && defined(__arm__)
 #    include "config_android32.h"
-#  elif defined(MOZ_WIDGET_ANDROID) && defined(__aarch64__)
+#  elif defined(MOZ_WIDGET_ANDROID) && defined(__ANDROID__) && defined(__aarch64__)
 #    include "config_android64.h"
-#  elif defined(MOZ_WIDGET_ANDROID) && defined(HAVE_64BIT_BUILD)
+#  elif defined(MOZ_WIDGET_ANDROID) && defined(__ANDROID__) && defined(HAVE_64BIT_BUILD)
 #    include "config_android_x86_64.h"
 #  elif defined(__aarch64__)
 #    include "config_unix_aarch64.h"
@@ -49,6 +54,11 @@
 #    else
 #      include "config_darwin64.h"
 #    endif
+// Again __ANDROID__: aarch64 with the android toolkit but glibc has no
+// MediaCodec, so take the unix config, which has CONFIG_MEDIACODEC 0.
+#  elif defined(MOZ_WIDGET_ANDROID) && !defined(__ANDROID__) && \
+      defined(__aarch64__)
+#    include "config_unix_aarch64.h"
 #  elif defined(MOZ_WIDGET_ANDROID) && defined(__aarch64__)
 #    include "config_android64.h"
 #  elif defined(MOZ_WIDGET_ANDROID) && defined(__arm__)
