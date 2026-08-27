@@ -6,8 +6,11 @@
 
 #include "RenderCompositorLayersSWGL.h"
 
+#include <cstdlib>
+
 #include "GLContext.h"
 #include "GLContextEGL.h"
+#include "mozilla/Debug.h"
 #include "RenderCompositorRecordedFrame.h"
 #include "mozilla/layers/BuildConstants.h"
 #include "mozilla/layers/Effects.h"
@@ -25,6 +28,16 @@ using namespace layers;
 using namespace gfx;
 
 namespace wr {
+
+// Android-toolkit-on-glibc builds only.  MOZ_ATL_SWAP_TRACE=1 prints the present path, from the
+// dirty rects WebRender hands StartCompositing down to eglSwapBuffers.
+static bool AtlSwapTrace() {
+  static const bool on = [] {
+    const char* const v = getenv("MOZ_ATL_SWAP_TRACE");
+    return v && v[0] && v[0] != '0';
+  }();
+  return on;
+}
 
 UniquePtr<RenderCompositor> RenderCompositorLayersSWGL::Create(
     const RefPtr<widget::CompositorWidget>& aWidget, nsACString& aError) {
@@ -78,6 +91,11 @@ void RenderCompositorLayersSWGL::StartCompositing(
   MOZ_RELEASE_ASSERT(!mCompositingStarted);
 
   if (!mInFrame || aNumDirtyRects == 0) {
+    if (AtlSwapTrace()) {
+      printf_stderr(
+          "[atl-swap] StartCompositing bail inFrame=%d dirtyRects=%zu\n",
+          (int)mInFrame, aNumDirtyRects);
+    }
     return;
   }
 
@@ -104,9 +122,21 @@ void RenderCompositorLayersSWGL::StartCompositing(
                                               aClearColor.b, aClearColor.a));
 
   if (!mCompositor->BeginFrameForWindow(dirty, Nothing(), bounds, opaque)) {
+    if (AtlSwapTrace()) {
+      printf_stderr("[atl-swap] BeginFrameForWindow failed bounds=%dx%d\n",
+                    bounds.width, bounds.height);
+    }
     return;
   }
   mCompositingStarted = true;
+  if (AtlSwapTrace()) {
+    const auto d = dirty.GetBounds();
+    printf_stderr(
+        "[atl-swap] StartCompositing ok bounds=%dx%d dirtyRects=%zu "
+        "dirtyBounds=%d,%d %dx%d opaqueRects=%zu\n",
+        bounds.width, bounds.height, aNumDirtyRects, d.x, d.y, d.width,
+        d.height, aNumOpaqueRects);
+  }
 }
 
 void RenderCompositorLayersSWGL::CompositorEndFrame() {
@@ -169,6 +199,10 @@ RenderedFrameId RenderCompositorLayersSWGL::EndFrame(
     const nsTArray<DeviceIntRect>& aDirtyRects) {
   MOZ_ASSERT(mInFrame);
   mInFrame = false;
+  if (AtlSwapTrace()) {
+    printf_stderr("[atl-swap] LayersSWGL::EndFrame compositingStarted=%d\n",
+                  (int)mCompositingStarted);
+  }
   if (mCompositingStarted) {
     mCompositor->EndFrame();
     mCompositingStarted = false;
