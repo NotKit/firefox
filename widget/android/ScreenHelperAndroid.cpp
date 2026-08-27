@@ -5,6 +5,7 @@
 #include "ScreenHelperAndroid.h"
 
 #include <mozilla/jni/Refs.h>
+#include <mozilla/jni/Utils.h>
 
 #include "AndroidRect.h"
 #include "AndroidVsync.h"
@@ -41,8 +42,17 @@ static already_AddRefed<Screen> MakePrimaryScreen() {
   uint16_t angle = java::GeckoAppShell::GetScreenAngle();
   // Note that sdrContentBrightness can vary in real time in response to varying
   // ambient light level.
-  float sdrContentBrightness = java::GeckoAppShell::GetSDRContentBrightness();
-  float hdrPeakBrightness = java::GeckoAppShell::GetHDRPeakBrightness();
+  // Both were added after GeckoView 153, which ATL runs this libxul against;
+  // an absent method is fatal in the lookup, so ask first. 80.0f is what the
+  // Java side itself returns when the display cannot say.
+  float sdrContentBrightness = 80.0f;
+  if (jni::HasMember<java::GeckoAppShell::GetSDRContentBrightness_t>()) {
+    sdrContentBrightness = java::GeckoAppShell::GetSDRContentBrightness();
+  }
+  float hdrPeakBrightness = 80.0f;
+  if (jni::HasMember<java::GeckoAppShell::GetHDRPeakBrightness_t>()) {
+    hdrPeakBrightness = java::GeckoAppShell::GetHDRPeakBrightness();
+  }
   float refreshRate = java::GeckoAppShell::GetScreenRefreshRate();
   return MakeAndAddRef<Screen>(
       bounds, bounds, depth, depth, refreshRate,

@@ -14,7 +14,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <sys/limits.h>
+#include <limits.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -42,6 +42,13 @@
 #include "mozilla/UniquePtr.h"
 #include "XREChildData.h"
 #include "XREShellData.h"
+
+/* The JDK's jni.h takes void** where the NDK's takes JNIEnv**. */
+#ifdef __ANDROID__
+#  define MOZ_JNI_ENV_ARG(env) (env)
+#else
+#  define MOZ_JNI_ENV_ARG(env) reinterpret_cast<void**>(env)
+#endif
 
 /* Android headers don't define RUSAGE_THREAD */
 #ifndef RUSAGE_THREAD
@@ -111,7 +118,8 @@ void abortThroughJava(const char* msg) {
 
   JNIEnv* env = nullptr;
   if (!sJavaVM ||
-      sJavaVM->AttachCurrentThreadAsDaemon(&env, nullptr) != JNI_OK) {
+      sJavaVM->AttachCurrentThreadAsDaemon(MOZ_JNI_ENV_ARG(&env), nullptr) !=
+          JNI_OK) {
     return;
   }
 
@@ -579,7 +587,7 @@ static void CatchFatalSignals(int num, siginfo_t* info, void* context) {
   // preserve the SA_SIGINFO contents.
   signal(num, SIG_DFL);
 
-  struct siginfo si;
+  siginfo_t si;
   if (!info) {
     memset(&si, 0, sizeof(si));
     si.si_code = SI_USER;
@@ -593,7 +601,8 @@ static void CatchFatalSignals(int num, siginfo_t* info, void* context) {
     // check to allow all si_code values in calls coming from inside the house.
   }
 
-  int rc = syscall(SYS_rt_tgsigqueueinfo, getpid(), gettid(), num, info);
+  int rc = syscall(SYS_rt_tgsigqueueinfo, getpid(), syscall(SYS_gettid), num,
+                   info);
   if (rc != 0) {
     __android_log_print(ANDROID_LOG_FATAL, "mozglue",
                         "failed to resend signal during crash: %s",

@@ -1469,7 +1469,10 @@ class NativeStub<Traits, Impl, jni::Args<Args...>> {
 template <class Traits, typename Ret, typename... Args>
 constexpr JNINativeMethod MakeNativeMethod(MOZ_JNICALL Ret (*stub)(JNIEnv*,
                                                                    Args...)) {
-  return {Traits::name, Traits::signature, reinterpret_cast<void*>(stub)};
+  // The NDK's JNINativeMethod holds const char*, the JDK's plain char*; JNI
+  // never writes through either, so cast away the const for both.
+  return {const_cast<char*>(Traits::name), const_cast<char*>(Traits::signature),
+          reinterpret_cast<void*>(stub)};
 }
 
 // Class inherited by implementing class.

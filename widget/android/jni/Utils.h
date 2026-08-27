@@ -6,6 +6,8 @@
 #define mozilla_jni_Utils_h_
 
 #include <jni.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 #include "nsIRunnable.h"
 
@@ -14,8 +16,6 @@
 #endif
 
 #ifdef MOZ_CHECK_JNI
-#  include <unistd.h>
-
 #  include "APKOpen.h"
 #  include "MainThreadUtils.h"
 #  include "mozilla/Assertions.h"
@@ -86,13 +86,24 @@ void SetGeckoThreadEnv(JNIEnv* aEnv);
 
 JNIEnv* GetEnvForThread();
 
+// bionic declares gettid(); glibc only does from 2.30 and the build sysroot is
+// older, so go through the syscall.
+inline pid_t GetCurrentThreadId() {
+#ifdef __BIONIC__
+  return ::gettid();
+#else
+  return static_cast<pid_t>(::syscall(SYS_gettid));
+#endif
+}
+
 #ifdef MOZ_CHECK_JNI
 #  define MOZ_ASSERT_JNI_THREAD(thread)                            \
     do {                                                           \
       if ((thread) == mozilla::jni::CallingThread::GECKO) {        \
         MOZ_RELEASE_ASSERT(::NS_IsMainThread());                   \
       } else if ((thread) == mozilla::jni::CallingThread::UI) {    \
-        const bool isOnUiThread = (GetUIThreadId() == ::gettid()); \
+        const bool isOnUiThread =                                  \
+            (GetUIThreadId() == mozilla::jni::GetCurrentThreadId());\
         MOZ_RELEASE_ASSERT(isOnUiThread);                          \
       }                                                            \
     } while (0)
@@ -132,6 +143,32 @@ uintptr_t GetNativeHandle(JNIEnv* env, jobject instance);
 void SetNativeHandle(JNIEnv* env, jobject instance, uintptr_t handle);
 
 jclass GetClassRef(JNIEnv* aEnv, const char* aClassName);
+
+// The wrappers libxul calls through are generated from this tree's GeckoView.
+// Under ATL libxul is loaded by whatever GeckoView the APK ships, which can be
+// older, and a class or member that is not there is fatal: GetClassRef
+// MOZ_CRASHes and Method<>::BeginAccess aborts on the lookup. These two ask
+// first, so a call site can fall back instead.
+
+// True if the Java side has this class. Leaves no pending exception.
+bool HasClass(const char* aClassName);
+
+// True if the Java side declares the method this traits class was generated
+// from. Leaves no pending exception.
+template <class Traits>
+bool HasMember() {
+  const auto& ctx = typename Traits::Owner::Context();
+  JNIEnv* const env = ctx.Env();
+  const jmethodID id =
+      Traits::isStatic ? env->GetStaticMethodID(ctx.ClassRef(), Traits::name,
+                                                Traits::signature)
+                       : env->GetMethodID(ctx.ClassRef(), Traits::name,
+                                          Traits::signature);
+  if (!id) {
+    env->ExceptionClear();
+  }
+  return !!id;
+}
 
 void DispatchToGeckoPriorityQueue(already_AddRefed<nsIRunnable> aCall);
 

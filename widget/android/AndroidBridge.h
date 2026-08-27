@@ -5,8 +5,6 @@
 #ifndef AndroidBridge_h_
 #define AndroidBridge_h_
 
-#include <unistd.h>  // for gettid
-
 #include "mozilla/jni/Refs.h"
 #include "mozilla/jni/Utils.h"
 #include "nsCOMPtr.h"
@@ -30,7 +28,7 @@ class NetworkInformation;
 class AndroidBridge final {
  public:
   static bool IsJavaUiThread() {
-    return mozilla::jni::GetUIThreadId() == gettid();
+    return mozilla::jni::GetUIThreadId() == mozilla::jni::GetCurrentThreadId();
   }
 
   static void ConstructBridge();
