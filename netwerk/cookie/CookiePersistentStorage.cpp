@@ -936,6 +936,13 @@ void CookiePersistentStorage::Activate() {
  */
 CookiePersistentStorage::OpenDBResult CookiePersistentStorage::TryInitDB(
     bool aRecreateDB) {
+  // Activate() only asserts this, so a storage service that failed to start
+  // reaches us as a null pointer in an opt build.  Cookies then live in
+  // memory, which is what the callers of a RESULT_FAILURE already do.
+  if (NS_WARN_IF(!mStorageService)) {
+    return RESULT_FAILURE;
+  }
+
   NS_ASSERTION(!mDBConn, "nonnull mDBConn");
   NS_ASSERTION(!mStmtInsert, "nonnull mStmtInsert");
   NS_ASSERTION(!mFlushListener, "nonnull mFlushListener");
@@ -2159,6 +2166,8 @@ void CookiePersistentStorage::InitDBConn() {
 
 nsresult CookiePersistentStorage::InitDBConnInternal() {
   MOZ_ASSERT(NS_IsMainThread());
+
+  NS_ENSURE_TRUE(mStorageService, NS_ERROR_NOT_AVAILABLE);
 
   nsresult rv = mStorageService->OpenUnsharedDatabase(
       mCookieFile, mozIStorageService::CONNECTION_DEFAULT,
