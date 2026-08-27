@@ -1,0 +1,26 @@
+# Gecko with the Android widget toolkit, built natively against glibc, so that
+# libxul.so can be loaded by the Android Translation Layer on an ordinary Linux
+# system instead of by Android's bionic and ART.
+#
+# Host target, for iteration speed; mozconfig-atl-glibc-arm64 is the device one.
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-atl-glibc
+
+ac_add_options --enable-project=mobile/android
+ac_add_options --enable-default-toolkit=cairo-android
+# Mandatory: without it, --enable-project=mobile/android silently targets
+# x86_64-unknown-linux-android and you build an ordinary Android Gecko.
+ac_add_options --target=x86_64-unknown-linux-gnu
+
+# Two shim trees this build needs, which live outside the Gecko tree: the NDK
+# headers Gecko expects from a sysroot it does not have here, and the matching
+# link side -- liblog, libandroid, libjnigraphics and libmediandk, assembled out
+# of the translation layer's own libandroid plus aborting stubs for the NDK entry
+# points it does not implement yet. Set ATL_SHIM_DIR to wherever you keep them.
+: "${ATL_SHIM_DIR:=$HOME/UT/firefox-atl}"
+ac_add_options --with-android-headers=$ATL_SHIM_DIR/android-headers-shim
+export LDFLAGS="-L$ATL_SHIM_DIR/android-libs-shim"
+
+ac_add_options --enable-optimize
+ac_add_options --disable-debug
+ac_add_options --disable-tests
+ac_add_options --enable-bootstrap

@@ -969,7 +969,10 @@ def target_is_sparc(target):
 set_define("SPARC64", target_is_sparc)
 
 
-@depends(target, when=target_is_android)
+# Not gated on target_is_android: mozglue/android and modules/libpref read
+# ANDROID_CPU_ARCH whenever the android widget toolkit is built, which under
+# The Android widget toolkit on glibc happens on a plain Linux target too.
+@depends(target)
 def android_cpu_arch(target):
     d = {
         "aarch64": "arm64-v8a",
@@ -977,9 +980,7 @@ def android_cpu_arch(target):
         "x86": "x86",
         "x86_64": "x86_64",
     }
-    if target.cpu not in d:
-        die(f"Cannot determine android_cpu_arch: unknown target.cpu: {target.cpu}")
-    return d[target.cpu]
+    return d.get(target.cpu)
 
 
 set_config("ANDROID_CPU_ARCH", android_cpu_arch)

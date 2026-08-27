@@ -1,0 +1,26 @@
+# aarch64: the same android-toolkit-on-glibc build as mozconfig-atl-glibc,
+# cross-compiled for the phone. Separate objdir so the x86_64 one that
+# everything is measured against stays intact.
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-atl-glibc-arm64
+
+ac_add_options --enable-project=mobile/android
+ac_add_options --enable-default-toolkit=cairo-android
+# Mandatory: without it, --enable-project=mobile/android silently targets
+# aarch64-unknown-linux-android and you build an ordinary Android Gecko.
+ac_add_options --target=aarch64-unknown-linux-gnu
+
+# Headers are architecture-independent, so the same shim tree is reused as is;
+# the link side is not, and points at the aarch64 rebuild of the same shim
+# against an aarch64 libandroid.so.0. See mozconfig-atl-glibc for ATL_SHIM_DIR.
+: "${ATL_SHIM_DIR:=$HOME/UT/firefox-atl}"
+ac_add_options --with-android-headers=$ATL_SHIM_DIR/android-headers-shim
+export LDFLAGS="-L$ATL_SHIM_DIR/android-libs-shim-arm64"
+
+# taskcluster/kinds/toolchain/onnx.yml:34 -- onnxruntime-aarch64-linux-gnu
+# "requires more work upstream", so there is no artifact to bootstrap.
+ac_add_options --without-onnx-runtime
+
+ac_add_options --enable-optimize
+ac_add_options --disable-debug
+ac_add_options --disable-tests
+ac_add_options --enable-bootstrap
