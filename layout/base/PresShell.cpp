@@ -5,6 +5,7 @@
 /* a presentation of a document, part 2 */
 
 #include "PresShell.h"
+#include <android/log.h>
 
 #include <algorithm>
 
@@ -12621,6 +12622,12 @@ PresShell::WindowSizeConstraints PresShell::GetWindowSizeConstraints() {
 
 void PresShell::PaintSynchronously() {
   MOZ_ASSERT(!mIsPainting, "re-entrant paint?");
+  __android_log_print(4, "ATLTRACE",
+                      "PaintSynchronously ps=%p never=%d suppressed=%d visible=%d "
+                      "painting=%d ownwidget=%p",
+                      (void*)this, (int)IsNeverPainting(),
+                      (int)IsPaintingSuppressed(), (int)IsVisible(),
+                      (int)mIsPainting, (void*)GetOwnWidget());
   if (IsNeverPainting() || IsPaintingSuppressed() || !IsVisible() ||
       MOZ_UNLIKELY(NS_WARN_IF(mIsPainting))) {
     return;
@@ -12632,6 +12639,8 @@ void PresShell::PaintSynchronously() {
     return;
   }
   MOZ_ASSERT(widget->IsTopLevelWidget());
+  __android_log_print(4, "ATLTRACE", "PaintSynchronously needsPaint=%d",
+                      (int)widget->NeedsPaint());
   if (!widget->NeedsPaint()) {
     return;
   }

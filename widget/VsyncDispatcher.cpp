@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "VsyncDispatcher.h"
+#include <android/log.h>
 
 #include "MainThreadUtils.h"
 #include "VsyncSource.h"
@@ -237,6 +238,7 @@ void VsyncDispatcher::RemoveMainThreadObserver(VsyncObserver* aObserver) {
 
 void VsyncDispatcher::UpdateVsyncStatus() {
   bool wasObservingVsync = false;
+  bool atlTrace = true;
   bool needVsync = false;
   RefPtr<gfx::VsyncSource> vsyncSource;
 
@@ -251,6 +253,10 @@ void VsyncDispatcher::UpdateVsyncStatus() {
 
   // Call Add/RemoveVsyncDispatcher outside the lock, because it can re-enter
   // into VsyncDispatcher::NotifyVsync.
+  __android_log_print(4, "ATLTRACE",
+                      "VsyncDispatcher::UpdateVsyncStatus need=%d was=%d src=%p",
+                      (int)needVsync, (int)wasObservingVsync, (void*)vsyncSource.get());
+  (void)atlTrace;
   if (needVsync && !wasObservingVsync) {
     vsyncSource->AddVsyncDispatcher(this);
   } else if (!needVsync && wasObservingVsync) {
