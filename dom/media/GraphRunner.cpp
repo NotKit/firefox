@@ -12,6 +12,9 @@
 #include "mozilla/dom/WorkletThread.h"
 #include "nsISupportsImpl.h"
 #include "nsISupportsPriority.h"
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/jni/Utils.h"
+#endif
 #include "prthread.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidProcess.h"
@@ -103,6 +106,11 @@ auto GraphRunner::OneIteration(GraphTime aStateTime,
 #ifdef MOZ_WIDGET_ANDROID
 namespace {
 void PromoteRenderingThreadAndroid() {
+  // A fork/exec content child has no JVM: every java::sdk::Process call below
+  // would dereference a null sJavaVM. It just keeps the default priority.
+  if (!jni::IsAvailable()) {
+    return;
+  }
   MOZ_LOG_FMT(
       gMediaTrackGraphLog, LogLevel::Debug,
       "GraphRunner default thread priority: {}",

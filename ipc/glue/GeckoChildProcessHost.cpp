@@ -123,6 +123,15 @@ static bool ShouldHaveDirectoryService() {
   return GeckoProcessType_Default == XRE_GetProcessType();
 }
 
+#ifdef MOZ_WIDGET_ANDROID
+// This configuration keeps MOZ_WIDGET_ANDROID but runs on glibc with no Java child
+// services, so this asks for the plain POSIX fork/exec launcher instead.
+static bool UseAtlPosixLaunch() {
+  static const bool sUse = !!PR_GetEnv("MOZ_ATL_POSIX_LAUNCH");
+  return sUse;
+}
+#endif
+
 #ifdef XP_IOS
 // Hack to ensure environment variables are copied into child processes on iOS.
 extern char** environ;
@@ -1480,6 +1489,13 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
   // Add any files which need to be transferred to fds_to_remap.
   // NOTE: This doesn't transfer ownership of the files out of `mChildArgs`.
   geckoargs::AddToFdsToRemap(mChildArgs, mLaunchOptions->fds_to_remap);
+#  else
+  // Android hands these to Java as ParcelFileDescriptors and the child picks
+  // them up in XRE_SetAndroidChildFds. A fork/exec child has no Java, so remap
+  // them onto the 3,4,5... that geckoargs defaults to instead.
+  if (UseAtlPosixLaunch()) {
+    geckoargs::AddToFdsToRemap(mChildArgs, mLaunchOptions->fds_to_remap);
+  }
 #  endif
 
   return Ok();
@@ -1488,6 +1504,9 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
 
 #if defined(MOZ_WIDGET_ANDROID)
 RefPtr<ProcessLaunchPromise> AndroidProcessLauncher::DoLaunch() {
+  if (UseAtlPosixLaunch()) {
+    return PosixProcessLauncher::DoLaunch();
+  }
   return LaunchAndroidService(mProcessType, mChildID, mChildArgs)
       ->Then(
           mLaunchThread, __func__,

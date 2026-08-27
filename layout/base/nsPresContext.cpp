@@ -716,13 +716,17 @@ void nsPresContext::Init(nsDeviceContext* aDeviceContext) {
   mEventManager->SetPresContext(this);
 
 #if defined(MOZ_WIDGET_ANDROID)
-  if (IsRootContentDocumentCrossProcess()) {
+  if (IsRootContentDocumentCrossProcess() &&
+      MOZ_LIKELY(
+          !Preferences::HasUserValue("layout.dynamic-toolbar-max-height"))) {
     if (BrowserChild* browserChild = BrowserChild::GetFrom(GetDocShell())) {
-      if (MOZ_LIKELY(!Preferences::HasUserValue(
-              "layout.dynamic-toolbar-max-height"))) {
-        mDynamicToolbarMaxHeight = browserChild->GetDynamicToolbarMaxHeight();
-        mDynamicToolbarHeight = mDynamicToolbarMaxHeight;
-      }
+      mDynamicToolbarMaxHeight = browserChild->GetDynamicToolbarMaxHeight();
+      mDynamicToolbarHeight = mDynamicToolbarMaxHeight;
+    } else if (nsIWidget* widget = nsContentUtils::WidgetForDocument(mDocument)) {
+      // e10s off: no BrowserParent pushed the value over IPC, so read it off
+      // the widget directly.
+      mDynamicToolbarMaxHeight = widget->GetDynamicToolbarMaxHeight();
+      mDynamicToolbarHeight = mDynamicToolbarMaxHeight;
     }
   }
 #endif

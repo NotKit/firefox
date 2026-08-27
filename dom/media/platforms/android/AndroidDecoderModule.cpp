@@ -12,6 +12,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
+#include "mozilla/jni/Utils.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsIGfxInfo.h"
 #include "nsPromiseFlatString.h"
@@ -262,8 +263,10 @@ AndroidDecoderModule::CreateVideoDecoder(const CreateDecoderParams& aParams) {
 
 // static
 bool AndroidDecoderModule::IsJavaDecoderModuleAllowed() {
+  // A fork/exec content child has no JVM: IsIsolatedProcess() would dereference
+  // a null sJavaVM, and there is no Java MediaCodec to hand work to anyway.
   return StaticPrefs::media_android_media_codec_enabled() &&
-         !java::GeckoAppShell::IsIsolatedProcess();
+         jni::IsAvailable() && !java::GeckoAppShell::IsIsolatedProcess();
 }
 
 RefPtr<PlatformDecoderModule::CreateDecoderPromise>

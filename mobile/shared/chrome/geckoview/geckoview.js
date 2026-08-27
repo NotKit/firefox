@@ -435,27 +435,32 @@ function createBrowser(settings) {
   browser.setAttribute("type", "content");
   browser.setAttribute("primary", "true");
   browser.setAttribute("flex", "1");
-  browser.setAttribute("maychangeremoteness", "true");
-  browser.setAttribute("remote", "true");
-  const pipPlacement = settings.pictureInPictureToken
-    ? GeckoViewPictureInPictureController.consumePlacement(
-        settings.pictureInPictureToken
-      )
-    : null;
-  let remoteType;
-  if (pipPlacement) {
-    browser.setAttribute(
-      "initialBrowsingContextGroupId",
-      pipPlacement.browsingContextGroupId
-    );
-    remoteType = pipPlacement.remoteType;
+  // The remote attribute is presence-based, so omit it when e10s is off.
+  if (Services.appinfo.browserTabsRemoteAutostart) {
+    browser.setAttribute("maychangeremoteness", "true");
+    browser.setAttribute("remote", "true");
+    const pipPlacement = settings.pictureInPictureToken
+      ? GeckoViewPictureInPictureController.consumePlacement(
+          settings.pictureInPictureToken
+        )
+      : null;
+    let remoteType;
+    if (pipPlacement) {
+      browser.setAttribute(
+        "initialBrowsingContextGroupId",
+        pipPlacement.browsingContextGroupId
+      );
+      remoteType = pipPlacement.remoteType;
+    } else {
+      remoteType = ChromeUtils.predictRemoteTypeForURI(null, {
+        window,
+        geckoViewSessionContextId: settings.sessionContextId ?? undefined,
+      });
+    }
+    browser.setAttribute("remoteType", remoteType);
   } else {
-    remoteType = ChromeUtils.predictRemoteTypeForURI(null, {
-      window,
-      geckoViewSessionContextId: settings.sessionContextId ?? undefined,
-    });
+    debug`ATL: e10s off, keeping the browser in the parent process`;
   }
-  browser.setAttribute("remoteType", remoteType);
   browser.setAttribute("messagemanagergroup", "browsers");
   browser.setAttribute("manualactiveness", "true");
 

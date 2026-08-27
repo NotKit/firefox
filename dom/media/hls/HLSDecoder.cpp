@@ -28,6 +28,7 @@
 #include "mozilla/java/GeckoResultWrappers.h"
 #include "mozilla/java/WebMessageWrappers.h"
 #include "mozilla/java/WebRequestWrappers.h"
+#include "mozilla/jni/Utils.h"
 #include "mozilla/widget/WebExecutorSupport.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
@@ -357,7 +358,9 @@ already_AddRefed<MediaDecoderStateMachineBase> HLSDecoder::CreateStateMachine(
 }
 
 bool HLSDecoder::IsEnabled() {
-  return StaticPrefs::media_hls_enabled() &&
+  // A fork/exec content child has no JVM: IsIsolatedProcess() would dereference
+  // a null sJavaVM, and there is no Java HLS player to drive anyway.
+  return StaticPrefs::media_hls_enabled() && jni::IsAvailable() &&
          !java::GeckoAppShell::IsIsolatedProcess();
 }
 

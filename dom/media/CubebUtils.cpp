@@ -34,6 +34,7 @@
 #include "prdtoa.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/java/GeckoAppShellWrappers.h"
+#  include "mozilla/jni/Utils.h"
 #endif
 #ifdef XP_WIN
 #  include "mozilla/mscom/EnsureMTA.h"
@@ -449,6 +450,12 @@ void ForceUnsetCubebContext() {
 
 void SetInCommunication(bool aInCommunication) {
 #ifdef MOZ_WIDGET_ANDROID
+  // A fork/exec content child has no JVM, and SetCommunicationAudioModeOn
+  // below would dereference a null sJavaVM. There is no AudioManager mode to
+  // set off Android, so the count is not worth keeping either.
+  if (!jni::IsAvailable()) {
+    return;
+  }
   StaticMutexAutoLock lock(sMutex);
   if (aInCommunication) {
     sInCommunicationCount++;

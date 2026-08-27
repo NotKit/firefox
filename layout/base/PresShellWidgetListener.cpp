@@ -14,6 +14,7 @@
 #include "mozilla/widget/Screen.h"
 #include "nsContentUtils.h"  // for nsAutoScriptBlocker
 #include "nsDeviceContext.h"
+#include "nsPresContext.h"
 #include "nsDocShell.h"
 #include "nsIFrame.h"
 #include "nsIWidget.h"
@@ -147,31 +148,97 @@ void PresShellWidgetListener::WindowResized(nsIWidget*,
   }
 }
 
+#ifdef MOZ_WIDGET_ANDROID
+// With e10s off -- which is how GeckoView runs under the Android Translation
+// Layer -- the tab is in this process and there is no BrowserParent to forward
+// the dynamic toolbar state to.  Layout would then never learn that a dynamic
+// toolbar exists while the compositor does, and the compositor's fixed layer
+// margin would be applied with nothing to cancel it, pushing position:fixed
+// bottom content off the bottom of the window.  Find the root content pres
+// context in this process instead.
+static nsPresContext* InProcessRootContentPresContext(dom::Document& aDoc) {
+  if (nsPresContext* pc = aDoc.GetPresContext()) {
+    if (pc->IsRootContentDocumentCrossProcess()) {
+      return pc;
+    }
+  }
+  nsPresContext* found = nullptr;
+  aDoc.EnumerateSubDocuments([&found](dom::Document& aSubDoc) {
+    found = InProcessRootContentPresContext(aSubDoc);
+    return found ? CallState::Stop : CallState::Continue;
+  });
+  return found;
+}
+
+nsPresContext* PresShellWidgetListener::GetInProcessContentPresContext() {
+  PresShell* presShell = GetPresShell();
+  if (!presShell) {
+    return nullptr;
+  }
+  dom::Document* document = presShell->GetDocument();
+  return document ? InProcessRootContentPresContext(*document) : nullptr;
+}
+#endif
+
 void PresShellWidgetListener::DynamicToolbarMaxHeightChanged(
     ScreenIntCoord aHeight) {
   MOZ_ASSERT(XRE_IsParentProcess(),
              "Should be only called for the browser parent process");
+  bool sentToRemote = false;
   CallOnAllRemoteChildren(
-      [aHeight](dom::BrowserParent* aBrowserParent) -> CallState {
+      [aHeight, &sentToRemote](dom::BrowserParent* aBrowserParent) -> CallState {
+        sentToRemote = true;
         aBrowserParent->DynamicToolbarMaxHeightChanged(aHeight);
         return CallState::Continue;
       });
+#ifdef MOZ_WIDGET_ANDROID
+  if (!sentToRemote) {
+    if (nsPresContext* pc = GetInProcessContentPresContext()) {
+      pc->SetDynamicToolbarMaxHeight(aHeight);
+    }
+  }
+#endif
 }
 
 void PresShellWidgetListener::DynamicToolbarOffsetChanged(
     ScreenIntCoord aOffset) {
   MOZ_ASSERT(XRE_IsParentProcess(),
              "Should be only called for the browser parent process");
+  bool sentToRemote = false;
   CallOnAllRemoteChildren(
-      [aOffset](dom::BrowserParent* aBrowserParent) -> CallState {
+      [aOffset, &sentToRemote](dom::BrowserParent* aBrowserParent) -> CallState {
         // Skip background tabs.
         if (!aBrowserParent->GetDocShellIsActive()) {
           return CallState::Continue;
         }
 
+        sentToRemote = true;
         aBrowserParent->DynamicToolbarOffsetChanged(aOffset);
         return CallState::Stop;
       });
+#ifdef MOZ_WIDGET_ANDROID
+  if (!sentToRemote) {
+    nsPresContext* pc = GetInProcessContentPresContext();
+    if (!pc) {
+      return;
+    }
+    // The max height reaches us before the content document exists, so it can
+    // be lost; take it from the widget here as well.
+    if (pc->GetDynamicToolbarMaxHeight() == 0) {
+      if (nsIWidget* widget = GetWidget()) {
+        pc->SetDynamicToolbarMaxHeight(widget->GetDynamicToolbarMaxHeight());
+      }
+    }
+    ScreenIntCoord maxHeight = pc->GetDynamicToolbarMaxHeight();
+    ScreenIntCoord offset = aOffset;
+    if (offset > 0) {
+      offset = ScreenIntCoord(0);
+    } else if (offset < -maxHeight) {
+      offset = -maxHeight;
+    }
+    pc->UpdateDynamicToolbarOffset(offset);
+  }
+#endif
 }
 
 void PresShellWidgetListener::KeyboardHeightChanged(ScreenIntCoord aHeight) {
