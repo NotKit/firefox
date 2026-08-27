@@ -10,7 +10,7 @@
 #include "Units.h"
 #include "nsStringFwd.h"
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 #  include "nsTArray.h"
 #endif
 
@@ -127,7 +127,7 @@ void PlatformAnnouncementEvent(Accessible* aTarget,
                                const nsAString& aAnnouncement,
                                uint16_t aPriority);
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 void PlatformScrollingEvent(Accessible* aTarget, uint32_t aEventType,
                             uint32_t aScrollX, uint32_t aScrollY,
                             uint32_t aMaxScrollX, uint32_t aMaxScrollY);

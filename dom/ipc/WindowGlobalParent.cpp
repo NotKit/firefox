@@ -684,7 +684,7 @@ IPCResult WindowGlobalParent::RecvDestroy() {
       // as the owner element. For example, this allows us to gracefully fire
       // accessibility events notifying of the destruction.
       if (auto* docAcc = a11y::DocAccessibleParent::GetFrom(this)) {
-#  if defined(ANDROID)
+#  if defined(MOZ_WIDGET_ANDROID)
         MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
 #  endif
         docAcc->Destroy();
@@ -2267,7 +2267,7 @@ WindowGlobalParent::AllocPDocAccessibleParent(const uint64_t&, const bool&) {
 mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
     a11y::PDocAccessibleParent* aDoc, const uint64_t& aParentID,
     const bool& aIsPrintDoc) {
-#  if defined(ANDROID)
+#  if defined(MOZ_WIDGET_ANDROID)
   MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
 #  endif
   if (ManagedPDocAccessibleParent().Count() > 1) {

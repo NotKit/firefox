@@ -874,7 +874,7 @@ nsresult HTMLInputElement::InitColorPicker() {
   // NOTE(krosylight): Android doesn't support HTML widgets. We can modify
   // GeckoView to handle MozOpenColorPicker and let it keep using its current
   // picker, but for now this is ok.
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   if (StaticPrefs::dom_forms_html_color_picker_enabled()) {
     OpenColorPicker();
     return NS_OK;
@@ -3235,7 +3235,7 @@ void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify,
   }
 }
 
-#if !defined(ANDROID) && !defined(XP_MACOSX)
+#if !defined(MOZ_WIDGET_ANDROID) && !defined(XP_MACOSX)
 bool HTMLInputElement::IsNodeApzAwareInternal() const {
   // Tell APZC we may handle mouse wheel event and do preventDefault when input
   // type is number.
@@ -6115,7 +6115,7 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
 }
 
 void HTMLInputElement::UpdateApzAwareFlag() {
-#if !defined(ANDROID) && !defined(XP_MACOSX)
+#if !defined(MOZ_WIDGET_ANDROID) && !defined(XP_MACOSX)
   if (mType == FormControlType::InputNumber ||
       mType == FormControlType::InputRange) {
     SetMayBeApzAware();

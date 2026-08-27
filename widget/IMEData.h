@@ -432,23 +432,23 @@ struct InputContext final {
 
   bool IsInputAttributeChanged(const InputContext& aOldContext) const {
     return mIMEState.mEnabled != aOldContext.mIMEState.mEnabled ||
-#if defined(ANDROID) || defined(MOZ_WIDGET_GTK) || defined(XP_WIN) || \
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK) || defined(XP_WIN) || \
     defined(XP_IOS)
            // input type and inputmode are supported by Windows IME API, GTK
            // IME API, Android IME API and iOS API.
            mHTMLInputType != aOldContext.mHTMLInputType ||
            mHTMLInputMode != aOldContext.mHTMLInputMode ||
 #endif
-#if defined(ANDROID) || defined(MOZ_WIDGET_GTK) || defined(XP_IOS)
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK) || defined(XP_IOS)
            // autocapitalize is supported by Android IME API, GTK IME API, and
            // iOS API
            mAutocapitalize != aOldContext.mAutocapitalize ||
 #endif
-#if defined(ANDROID) || defined(XP_IOS)
+#if defined(MOZ_WIDGET_ANDROID) || defined(XP_IOS)
            // enterkeyhint is only supported by Android IME API and iOS API.
            mActionHint != aOldContext.mActionHint ||
 #endif
-#if defined(ANDROID) || defined(XP_DARWIN)
+#if defined(MOZ_WIDGET_ANDROID) || defined(XP_DARWIN)
            // autocorrect is only supported by Android IME API, macOS text
            // substitution and iOS API.
            mAutocorrect != aOldContext.mAutocorrect ||

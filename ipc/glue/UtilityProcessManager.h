@@ -23,11 +23,11 @@ namespace mozilla {
 
 class MemoryReportingProcess;
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 namespace hwinference {
 class HWInferenceParent;
 }  // namespace hwinference
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
 namespace dom {
 class JSOracleParent;
@@ -110,11 +110,11 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   RefPtr<PKCS11ModulePromise> StartPKCS11Module();
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   // Launches an independent HWInference process and binds aActor to it.
   already_AddRefed<UtilityProcessKeepAlive> LaunchIndependentHWInferenceProcess(
       RefPtr<hwinference::HWInferenceParent> aActor);
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
 

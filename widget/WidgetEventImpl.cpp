@@ -2235,12 +2235,12 @@ CodeNameIndex WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
 #endif  // #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 
       // Only GTK and Android supports the following multimedia keys.
-#if defined(MOZ_WIDGET_GTK) || defined(ANDROID)
+#if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)
     case KEY_NAME_INDEX_Eject:
       return CODE_NAME_INDEX_Eject;
     case KEY_NAME_INDEX_WakeUp:
       return CODE_NAME_INDEX_WakeUp;
-#endif  // #if defined(MOZ_WIDGET_GTK) || defined(ANDROID)
+#endif  // #if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)
 
       // Only Windows does not support Help key (and macOS handled above).
 #if !defined(XP_WIN) && !defined(XP_MACOSX)
@@ -2284,7 +2284,7 @@ CodeNameIndex WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
       return CODE_NAME_INDEX_Backquote;
 #endif  // #ifdef MOZ_WIDGET_GTK
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
     case KEY_NAME_INDEX_Convert:
       return CODE_NAME_INDEX_Convert;
     case KEY_NAME_INDEX_NonConvert:
@@ -2297,7 +2297,7 @@ CodeNameIndex WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
       return CODE_NAME_INDEX_Lang2;
     case KEY_NAME_INDEX_KanjiMode:
       return CODE_NAME_INDEX_Lang1;
-#endif  // #ifdef ANDROID
+#endif  // #ifdef MOZ_WIDGET_ANDROID
 
 #ifdef XP_MACOSX
     case KEY_NAME_INDEX_Eisu:

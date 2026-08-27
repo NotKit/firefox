@@ -33,9 +33,9 @@ enum SandboxingKind : uint64_t {
   PKCS11_MODULE,
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   HW_INFERENCE,
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
   // Add new kinds directly above this one: the gtests, and the
   // MOZ_DISABLE_CONTENT_SANDBOX "utility:N" syntax, refer to the pre-existing

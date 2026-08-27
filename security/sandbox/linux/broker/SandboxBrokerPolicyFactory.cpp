@@ -1239,7 +1239,7 @@ SandboxBrokerPolicyFactory::GetUtilityProcessPolicy(int aPid) {
   return policy;
 }
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 /* static */
 UniquePtr<SandboxBroker::Policy>
 SandboxBrokerPolicyFactory::GetHWInferencePolicy(int aPid) {
@@ -1309,6 +1309,6 @@ SandboxBrokerPolicyFactory::GetHWInferencePolicy(int aPid) {
 
   return policy;
 }
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
 }  // namespace mozilla

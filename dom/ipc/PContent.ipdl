@@ -41,9 +41,9 @@ include protocol PURLClassifierLocal;
 include protocol PURLClassifierLocalByName;
 include protocol PVRManager;
 include protocol PRemoteMediaManager;
-#if !defined(ANDROID) && defined(MOZ_WEBSPEECH)
+#if !defined(MOZ_WIDGET_ANDROID) && defined(MOZ_WEBSPEECH)
 include protocol PSpeechRecognition;
-#endif  // !ANDROID && MOZ_WEBSPEECH
+#endif  // !MOZ_WIDGET_ANDROID && MOZ_WEBSPEECH
 include protocol PRemoteWorkerDebuggerManager;
 include protocol PRemoteWorkerService;
 include protocol PProfiler;
@@ -206,7 +206,7 @@ namespace dom {
 // SetXPCOMProcessAttributes passes an array of font data to the child,
 // but each platform needs different details so we have platform-specific
 // versions of the SystemFontListEntry type:
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 // Used on Android to pass the list of fonts on the device
 // to the child process
 struct SystemFontListEntry {
@@ -1220,7 +1220,7 @@ parent:
 
     async CreateAudioIPCConnection() returns (FileDescOrError fd);
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
     async AcquireHWInferenceProcess();
 #ifdef MOZ_WEBSPEECH
     async CreateSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint);
@@ -1229,7 +1229,7 @@ parent:
     // One call per AcquireHWInferenceProcess. The process is shut down once
     // nothing holds it anymore.
     async ReleaseHWInferenceConnection();
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
     sync PURLClassifier(nullable nsIPrincipal principal)
         returns (bool success);

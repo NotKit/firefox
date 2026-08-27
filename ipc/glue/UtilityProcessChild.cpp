@@ -307,7 +307,7 @@ mozilla::ipc::IPCResult UtilityProcessChild::RecvStartJSOracleService(
   return IPC_OK();
 }
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 already_AddRefed<hwinference::PHWInferenceChild>
 UtilityProcessChild::AllocPHWInferenceChild() {
   PROFILER_MARKER_UNTYPED(
@@ -317,7 +317,7 @@ UtilityProcessChild::AllocPHWInferenceChild() {
   mHWInferenceInstance = MakeRefPtr<hwinference::HWInferenceChild>();
   return do_AddRef(mHWInferenceInstance);
 }
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
 #if defined(XP_WIN)
 mozilla::ipc::IPCResult UtilityProcessChild::RecvStartWindowsUtilsService(
@@ -442,11 +442,11 @@ void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
 
   mJSOracleInstance = nullptr;
 
-#  ifndef ANDROID
+#  ifndef MOZ_WIDGET_ANDROID
   // A managed actor holds its manager; keeping it alive here would keep this
   // process' toplevel alive too.
   mHWInferenceInstance = nullptr;
-#  endif  // !ANDROID
+#  endif  // !MOZ_WIDGET_ANDROID
 
 #  ifdef XP_WIN
   mWindowsUtilsInstance = nullptr;

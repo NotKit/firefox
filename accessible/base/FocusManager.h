@@ -136,7 +136,7 @@ class FocusManager {
    */
   void ProcessFocusEvent(AccEvent* aEvent);
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   void SetFocusedRemoteDoc(DocAccessibleParent* aDoc) {
     mFocusedRemoteDoc = aDoc;
   }
@@ -157,7 +157,7 @@ class FocusManager {
   RefPtr<LocalAccessible> mActiveItem;
   RefPtr<LocalAccessible> mLastFocus;
   RefPtr<LocalAccessible> mActiveARIAMenubar;
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   DocAccessibleParent* mFocusedRemoteDoc = nullptr;
 #endif
 };

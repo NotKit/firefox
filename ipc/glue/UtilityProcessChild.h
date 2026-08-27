@@ -6,9 +6,9 @@
 #include "mozilla/ipc/PUtilityProcessChild.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/ipc/UtilityMediaServiceParent.h"
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 #  include "mozilla/hwinference/HWInferenceChild.h"
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 #include "ChildProfilerController.h"
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
@@ -94,9 +94,9 @@ class UtilityProcessChild final : public PUtilityProcessChild {
       Endpoint<PPKCS11ModuleChild>&& aEndpoint, nsCString&& aProfilePath);
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   already_AddRefed<hwinference::PHWInferenceChild> AllocPHWInferenceChild();
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -109,11 +109,11 @@ class UtilityProcessChild final : public PUtilityProcessChild {
     return mUtilityMediaServiceInstance;
   }
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   hwinference::HWInferenceChild* GetHWInferenceChild() const {
     return mHWInferenceInstance;
   }
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
  protected:
   friend class UtilityProcessImpl;
@@ -124,9 +124,9 @@ class UtilityProcessChild final : public PUtilityProcessChild {
   RefPtr<ChildProfilerController> mProfilerController;
   RefPtr<UtilityMediaServiceParent> mUtilityMediaServiceInstance{};
   RefPtr<dom::JSOracleChild> mJSOracleInstance{};
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   RefPtr<hwinference::HWInferenceChild> mHWInferenceInstance{};
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 #ifdef XP_WIN
   RefPtr<PWindowsUtilsChild> mWindowsUtilsInstance;
 #endif

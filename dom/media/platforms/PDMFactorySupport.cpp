@@ -58,7 +58,7 @@ constexpr const char* kInvalidatingPrefs_AppleMedia[] = {
 };
 #endif
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 constexpr const char* kInvalidatingPrefs_Android[] = {
     "media.android-media-codec.preferred",
     "media.utility-android-media-codec.enabled",
@@ -227,7 +227,7 @@ bool PDMFactorySupport::EnsureInvalidationListenersRegistered() {
     Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
                                    kInvalidatingPrefs_AppleMedia);
 #endif
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
     Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
                                    kInvalidatingPrefs_Android);
 #endif

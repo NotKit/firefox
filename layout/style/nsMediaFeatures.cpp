@@ -253,7 +253,7 @@ bool Gecko_MediaFeatures_MatchesPlatform(StylePlatform aPlatform) {
 #if defined(XP_WIN)
     case StylePlatform::Windows:
       return true;
-#elif defined(ANDROID)
+#elif defined(MOZ_WIDGET_ANDROID)
     case StylePlatform::Android:
       return true;
 #elif defined(MOZ_WIDGET_GTK)
@@ -432,7 +432,7 @@ static PointerCapabilities GetPointerCapabilities(const Document* aDocument,
   // The default value for Desktop is mouse-type pointer, and for Android
   // a coarse pointer.
   const PointerCapabilities kDefaultCapabilities =
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
       PointerCapabilities::Coarse;
 #else
       PointerCapabilities::Fine | PointerCapabilities::Hover;

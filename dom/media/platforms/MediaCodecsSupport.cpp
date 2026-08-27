@@ -387,7 +387,7 @@ MediaCodec MCSInfo::GetMediaCodecFromMimeType(const nsACString& aMimeType) {
     return MediaCodec::AV1;
   }
   // TODO: Should this be Android only?
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   if (aMimeType.EqualsLiteral("video/x-vnd.on2.vp8")) {
     return MediaCodec::VP8;
   }

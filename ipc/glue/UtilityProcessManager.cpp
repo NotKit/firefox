@@ -12,9 +12,9 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"  // for LaunchUtilityProcess
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 #  include "mozilla/hwinference/HWInferenceParent.h"
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/ipc/UtilityMediaServiceChild.h"
 #include "mozilla/ipc/UtilityMediaServiceParent.h"
@@ -370,7 +370,7 @@ UtilityProcessManager::LaunchIndependentProcess(SandboxingKind aSandbox) {
   return keepAlive.forget();
 }
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 already_AddRefed<UtilityProcessKeepAlive>
 UtilityProcessManager::LaunchIndependentHWInferenceProcess(
     RefPtr<hwinference::HWInferenceParent> aActor) {
@@ -382,7 +382,7 @@ UtilityProcessManager::LaunchIndependentHWInferenceProcess(
   }
   return keepAlive.forget();
 }
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
 template <typename Actor>
 RefPtr<UtilityProcessManager::LaunchPromise<Ok>>

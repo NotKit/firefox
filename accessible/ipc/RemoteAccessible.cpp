@@ -1183,7 +1183,7 @@ LayoutDeviceIntRect RemoteAccessible::BoundsWithOffset(
       }
     }
 
-#if !defined(ANDROID)
+#if !defined(MOZ_WIDGET_ANDROID)
     // This block is not thread safe because it queries a LocalAccessible.
     // It is also not needed in Android since the only local accessible is
     // the outer doc browser that has an offset of 0.

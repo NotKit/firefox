@@ -183,7 +183,7 @@
 #define IS_DEV_EDITION_OR_EARLY_BETA_OR_EARLIER false
 #endif
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 #define IS_ANDROID true
 #define IS_NOT_ANDROID false
 #else
@@ -215,7 +215,7 @@
 #define IS_NOT_IOS true
 #endif
 
-#if defined(ANDROID) || defined(XP_IOS)
+#if defined(MOZ_WIDGET_ANDROID) || defined(XP_IOS)
 #define IS_MOBILE true
 #define IS_NOT_MOBILE false
 #else
@@ -362,7 +362,7 @@
   mirror: never
 #endif
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   #---------------------------------------------------------------------------
   # Prefs starting with "android."
   #---------------------------------------------------------------------------
@@ -454,7 +454,7 @@
   value: false
   mirror: always
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 - name: apz.android.chrome_fling_physics.friction
   type: AtomicFloat
   value: 0.015f
@@ -1809,7 +1809,7 @@
 # is disabled on Android.
 - name: browser.http.blank_page_with_error_response.enabled
   type: bool
-#if !defined(ANDROID)
+#if !defined(MOZ_WIDGET_ANDROID)
   value: false
 #else
   value: true
@@ -2226,7 +2226,7 @@
 # Cross-Origin-Embedder-Policy header
 - name: browser.tabs.remote.coep.credentialless
   type: RelaxedAtomicBool
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   value: @IS_NIGHTLY_BUILD@
 #else
   value: true
@@ -2245,7 +2245,7 @@
 # top-level load of file:// URIs
 - name: browser.tabs.remote.separateFileUriProcess
   type: RelaxedAtomicBool
-#if !defined(ANDROID)
+#if !defined(MOZ_WIDGET_ANDROID)
   value: true
 #else
   value: false
@@ -2274,7 +2274,7 @@
 # JavaScript.
 - name: browser.opaqueResponseBlocking
   type: RelaxedAtomicBool
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   value: @IS_NIGHTLY_BUILD@
 #else
   value: true
@@ -2391,7 +2391,7 @@
 # Clipboard behavior.
 - name: clipboard.autocopy
   type: bool
-#if !defined(ANDROID) && !defined(XP_MACOSX) && defined(XP_UNIX)
+#if !defined(MOZ_WIDGET_ANDROID) && !defined(XP_MACOSX) && defined(XP_UNIX)
   value: true
 #else
   value: false
@@ -2441,7 +2441,7 @@
 # Prefs starting with "consoleservice."
 #---------------------------------------------------------------------------
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   # Disable sending console to logcat on release builds.
 -   name: consoleservice.logcat
     type: RelaxedAtomicBool
@@ -3301,7 +3301,7 @@
 # https://wicg.github.io/document-picture-in-picture/#api
 - name: dom.documentpip.enabled
   type: RelaxedAtomicBool
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 # Always disable on android (unsupported) so that webpages aren't
 # confused by the webidl bindings being exposed
   value: false
@@ -3368,7 +3368,7 @@
 # This pref enables the keyboardLock option for requestFullscreen.
 - name: dom.fullscreen.keyboard_lock.enabled
   type: bool
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 # Fullscreen Keyboard Lock is not functional on Android, so disable the feature
 # until there is handling for it.
   value: false
@@ -3760,7 +3760,7 @@
 # Only used in fission; in e10s we use 1 always
 - name: dom.ipc.processPrelaunch.fission.number
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   # Bug 1999950: Prelaunch 1 process on Android due to a performance regression.
   value: 1
 #else
@@ -3851,7 +3851,7 @@
   value: @IS_ANDROID@
   mirror: always
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 - name: dom.forms.html_color_picker.enabled
   type: bool
   value: @IS_NIGHTLY_BUILD@
@@ -3865,7 +3865,7 @@
 
 - name: dom.forms.alpha.enabled
   type: bool
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   value: @IS_NIGHTLY_BUILD@
 #else
   value: false
@@ -4199,7 +4199,7 @@
 # Enable the Picture-in-Picture API
 - name: dom.media-pip.enabled
   type: RelaxedAtomicBool
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 # Not yet supported on Android (Fenix), so keep it disabled to avoid
 # webpages successfully feature-detecting an API that fails on use.
   value: false
@@ -4293,7 +4293,7 @@
   value: true
   mirror: always
 
-#if !defined(ANDROID)
+#if !defined(MOZ_WIDGET_ANDROID)
 # Whether to use the platform API to "lock" the native pointer for pointer lock.
 - name: dom.pointer-lock.native-lock.enabled
   type: bool
@@ -4586,7 +4586,7 @@
 # long-lived profiles with a large number of unused origins.
 - name: dom.quotaManager.temporaryStorage.clearNonPersistedZeroUsageOrigins
   type: RelaxedAtomicBool
-#if defined(NIGHTLY_BUILD) && defined(XP_LINUX) && !defined(ANDROID)
+#if defined(NIGHTLY_BUILD) && defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #else
   value: false
@@ -5987,7 +5987,7 @@
 # Oculus device
 - name: dom.vr.oculus.enabled
   type: RelaxedAtomicBool
-#if defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
+#if defined(HAVE_64BIT_BUILD) && !defined(MOZ_WIDGET_ANDROID)
   # We are only enabling WebVR by default on 64-bit builds (Bug 1384459).
   value: true
 #else
@@ -6023,7 +6023,7 @@
 # OpenVR device
 - name: dom.vr.openvr.enabled
   type: RelaxedAtomicBool
-#if !defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
+#if !defined(HAVE_64BIT_BUILD) && !defined(MOZ_WIDGET_ANDROID)
   # We are only enabling WebVR by default on 64-bit builds (Bug 1384459).
   value: false
 #elif defined(XP_WIN) || defined(XP_MACOSX)
@@ -6259,7 +6259,7 @@
 # on a platform that supports the GPU process, else true.
 - name: dom.webgpu.allow-in-parent
   type: bool
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID)
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(MOZ_WIDGET_ANDROID)
   value: false
 #else
   value: true
@@ -6296,7 +6296,7 @@
 
 - name: dom.webgpu.allow-present-without-readback
   type: RelaxedAtomicBool
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX) && !defined(ANDROID)
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #else
   value: false
@@ -6441,7 +6441,7 @@
 # Allow notificationclick to open window only during the limited timeframe.
 - name: dom.webnotifications.disable_open_click_delay
   type: RelaxedAtomicUint32
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   # Allow service workers to open windows for a longer period after a notification
   # click on mobile. This is to account for some devices being quite slow (bug 1409761)
   value: 5000
@@ -7443,7 +7443,7 @@
 
 - name: gfx.canvas.accelerated
   type: bool
-#if defined(XP_MACOSX) || defined(XP_LINUX) && !defined(ANDROID)
+#if defined(XP_MACOSX) || defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(MOZ_WIDGET_ANDROID)
   value: true
@@ -7456,7 +7456,7 @@
 
 - name: gfx.canvas.accelerated.allow-in-parent
   type: bool
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID)
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(MOZ_WIDGET_ANDROID)
   value: false
 #else
   value: true
@@ -8860,7 +8860,7 @@
 
 - name: gfx.webrender.program-binary-disk
   type: bool
-#if defined(XP_WIN) || defined(ANDROID)
+#if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID)
   value: true
 #else
   value: false
@@ -8928,7 +8928,7 @@
 
 - name: gfx.webrender.enable-low-priority-pool
   type: RelaxedAtomicBool
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   value: false
 #else
   value: true
@@ -12220,7 +12220,7 @@
 # The number of scrollports wide to expand when tracking frame visibility.
 - name: layout.framevisibility.numscrollportwidths
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 1
 #else
   value: 0
@@ -12319,7 +12319,7 @@
 # Whether scrollIntoView scrolls to `position: fixed` frames visually.
 - name: layout.scroll_fixed_content_into_view_visually
   type: bool
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   value: true
 #else
   value: false
@@ -12381,7 +12381,7 @@
 # We expect all OSes to have relevant fonts, except Android, see bug 1789083.
 - name: mathml.mathvariant_styling_fallback.disabled
   type: bool
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   value: false
 #else
   value: true
@@ -12901,7 +12901,7 @@
 
 # Provide minimal HW support for codecs that are otherwise unavailable on
 # Android, e.g. H264 and HEVC.
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 - name: media.ffvpx-hw.minimal
   type: RelaxedAtomicBool
   value: false
@@ -12921,7 +12921,7 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -12965,7 +12965,7 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -12998,7 +12998,7 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13017,7 +13017,7 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13036,7 +13036,7 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13055,7 +13055,7 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13083,7 +13083,7 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) || defined(ANDROID)
+#elif defined(XP_LINUX) || defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13103,7 +13103,7 @@
   value: 2
   mirror: always
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   # Enable the MediaCodec PlatformDecoderModule by default.
 -   name: media.android-media-codec.enabled
     type: RelaxedAtomicBool
@@ -13121,7 +13121,7 @@
     type: RelaxedAtomicBool
     value: true
     mirror: always
-#endif  # ANDROID
+#endif  # MOZ_WIDGET_ANDROID
 
 # Now we will completely disable the ability to perform audio decoding outside
 # of Utility.
@@ -13721,7 +13721,7 @@
 # The maximum number of queued frames to send to the compositor.
 - name: media.video-queue.send-to-compositor-size
   type: RelaxedAtomicInt32
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 # On Android, it needs to be throttled because SurfaceTexture contains only one
 # (the most recent) image data. See bug 1299068.
   value: 1
@@ -13795,7 +13795,7 @@
 
 # Max number of HLS players that can be created concurrently. Used only on
 # Android and when "media.hls.enabled" is true.
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 -   name: media.hls.max-allocations
     type: uint32_t
     value: 20
@@ -14274,7 +14274,7 @@
 # 2: prefer PlatformEncoderModule for HW, then builtin WebRTC encoder for SW
 - name: media.webrtc.encoder_creation_strategy
   type: RelaxedAtomicUint32
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 2
 #else
   value: 0
@@ -14661,7 +14661,7 @@
 # a link opens the link in a new window.
 - name: middlemouse.openNewWindow
   type: bool
-#if defined(ANDROID) || !defined(XP_MACOSX) && defined(XP_UNIX)
+#if defined(MOZ_WIDGET_ANDROID) || !defined(XP_MACOSX) && defined(XP_UNIX)
   value: true
 #else
   value: false
@@ -15376,7 +15376,7 @@
 # NS_HTTP_LARGE_KEEPALIVE flag is used for a connection
 - name: network.http.largeKeepaliveFactor
   type: RelaxedAtomicUint32
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   value: 10
 #else
   value: 20
@@ -15412,7 +15412,7 @@
 # Whether or not we give more priority to active tab.
 - name: network.http.active_tab_priority
   type: RelaxedAtomicBool
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   value: false
 #else
   value: true
@@ -15811,7 +15811,7 @@
 - name: network.process.enabled
   type: RelaxedAtomicBool
   mirror: always
-#if defined(ANDROID) || defined(MOZ_THUNDERBIRD) || defined(XP_IOS)
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_THUNDERBIRD) || defined(XP_IOS)
   value: false # see bug 1641427
 #else
   value: true
@@ -17808,7 +17808,7 @@
 # toolkit/components/pdfjs/jar.mn.
 - name: pdfjs.embedFallback
   type: bool
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   value: false
 #else
   value: true
@@ -19338,7 +19338,7 @@
 # 2: fetch OCSP only for EV certificates
 - name: security.OCSP.enabled
   type: RelaxedAtomicUint32
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 2
 #else
   value: 1
@@ -19485,7 +19485,7 @@
 # - "compat" => clubcards that contain priority revocations
 - name: security.pki.crlite_channel
   type: String
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: "compat"
 #else
   value: "default"
@@ -20452,7 +20452,7 @@
 
 - name: ui.touch.radius.topmm
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 2
 #else
   value: 12
@@ -20461,7 +20461,7 @@
 
 - name: ui.touch.radius.rightmm
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 3
 #else
   value: 8
@@ -20470,7 +20470,7 @@
 
 - name: ui.touch.radius.bottommm
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 2
 #else
   value: 4
@@ -20479,7 +20479,7 @@
 
 - name: ui.touch.radius.leftmm
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 3
 #else
   value: 8
@@ -20500,7 +20500,7 @@
 
 - name: ui.mouse.radius.topmm
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 2
 #else
   value: 12
@@ -20509,7 +20509,7 @@
 
 - name: ui.mouse.radius.rightmm
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 3
 #else
   value: 8
@@ -20518,7 +20518,7 @@
 
 - name: ui.mouse.radius.bottommm
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 2
 #else
   value: 4
@@ -20527,7 +20527,7 @@
 
 - name: ui.mouse.radius.leftmm
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 3
 #else
   value: 8
@@ -20897,7 +20897,7 @@
 # on a platform that supports the GPU process, else true.
 - name: webgl.allow-in-parent
   type: bool
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID)
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(MOZ_WIDGET_ANDROID)
   value: false
 #else
   value: true
@@ -21848,7 +21848,7 @@
   mirror: always
 #endif
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 # Whether to render in to a child SurfaceControl rather than directly into the SurfaceView
 - name: widget.android.use-surfacecontrol
   type: bool
@@ -21880,7 +21880,7 @@
 
 - name: zoom.maxPercent
   type: uint32_t
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   value: 400
 #else
   value: 500

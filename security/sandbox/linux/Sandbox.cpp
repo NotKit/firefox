@@ -836,9 +836,9 @@ void SetUtilitySandbox(int aBroker, ipc::SandboxingKind aKind) {
   UniquePtr<sandbox::bpf_dsl::Policy> policy;
   switch (aKind) {
     case ipc::SandboxingKind::GENERIC_UTILITY:
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
     case ipc::SandboxingKind::HW_INFERENCE:
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
       policy = GetUtilitySandboxPolicy(sBroker);
       break;
 

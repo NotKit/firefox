@@ -1096,7 +1096,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
       PlatformFocusEvent(target);
       break;
     }
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
     case nsIAccessibleEvent::EVENT_SCROLLING_END:
     case nsIAccessibleEvent::EVENT_SCROLLING: {
       AccScrollingEvent* scrollingEvent = downcast_accEvent(aEvent);
@@ -1106,7 +1106,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           scrollingEvent->MaxScrollY());
       break;
     }
-#endif  // defined(ANDROID)
+#endif  // defined(MOZ_WIDGET_ANDROID)
     case nsIAccessibleEvent::EVENT_ANNOUNCEMENT: {
       AccAnnouncementEvent* announcementEvent = downcast_accEvent(aEvent);
       PlatformAnnouncementEvent(target, announcementEvent->Announcement(),

@@ -1121,7 +1121,7 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvCreateAudioIPCConnection(
       CreateAudioIPCConnectionResolver&& aResolver);
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   // Points mHWInferenceKeepAlive at the live HWInference process, launching it
   // if it is gone. Leaves it null once the restart budget is spent.
   void EnsureHWInferenceConnection();
@@ -1134,7 +1134,7 @@ class ContentParent final : public PContentParent,
 #  endif
 
   mozilla::ipc::IPCResult RecvReleaseHWInferenceConnection();
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
   already_AddRefed<extensions::PExtensionsParent> AllocPExtensionsParent();
 
@@ -1530,11 +1530,11 @@ class ContentParent final : public PContentParent,
   // they're attached to.
   const RefPtr<ThreadsafeContentParentHandle> mThreadsafeHandle;
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   // One keep-alive held for as long as this process has a connection.
   uint32_t mHWInferenceConnections = 0;
   RefPtr<mozilla::ipc::UtilityProcessKeepAlive> mHWInferenceKeepAlive;
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
   // The process starts in the LAUNCHING state, and transitions to
   // ALIVE once it can accept IPC messages.  It remains ALIVE only

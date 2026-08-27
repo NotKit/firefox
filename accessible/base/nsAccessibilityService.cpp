@@ -1676,7 +1676,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
   return newAcc;
 }
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/Maybe.h"
 #  include "mozilla/Monitor.h"
 
@@ -1830,7 +1830,7 @@ void nsAccessibilityService::Shutdown() {
   gApplicationAccessible = nullptr;
   gXPCApplicationAccessible = nullptr;
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   // Don't allow the service to shut down while an a11y request is being handled
   // in the UI thread, as the request may depend on state from the service.
   MonitorAutoLock mal(GetAndroidMonitor());

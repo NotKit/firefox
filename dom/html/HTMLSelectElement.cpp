@@ -358,7 +358,7 @@ void HTMLSelectElement::ShowPicker(ErrorResult& aRv) {
   // Step 5. Otherwise, the user agent should show any relevant user interface
   // for selecting a value for element, in the way it normally would when the
   // user interacts with the control.
-#if !defined(ANDROID)
+#if !defined(MOZ_WIDGET_ANDROID)
   if (!IsCombobox()) {
     return;
   }

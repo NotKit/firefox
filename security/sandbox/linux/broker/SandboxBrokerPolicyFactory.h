@@ -21,9 +21,9 @@ class SandboxBrokerPolicyFactory {
   static UniquePtr<SandboxBroker::Policy> GetRDDPolicy(int aPid);
   static UniquePtr<SandboxBroker::Policy> GetSocketProcessPolicy(int aPid);
   static UniquePtr<SandboxBroker::Policy> GetUtilityProcessPolicy(int aPid);
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   static UniquePtr<SandboxBroker::Policy> GetHWInferencePolicy(int aPid);
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
  private:
   UniquePtr<const SandboxBroker::Policy> mCommonContentPolicy;

@@ -192,12 +192,12 @@ void UtilityProcessHost::InitAfterConnect(bool aSucceeded) {
             GetActor()->OtherPid());
         break;
 
-#  ifndef ANDROID
+#  ifndef MOZ_WIDGET_ANDROID
       case SandboxingKind::HW_INFERENCE:
         policy = SandboxBrokerPolicyFactory::GetHWInferencePolicy(
             GetActor()->OtherPid());
         break;
-#  endif  // !ANDROID
+#  endif  // !MOZ_WIDGET_ANDROID
 
       default:
         MOZ_ASSERT(false, "Invalid SandboxingKind");

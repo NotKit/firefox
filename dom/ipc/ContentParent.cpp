@@ -151,13 +151,13 @@
 #include "mozilla/glean/IpcMetrics.h"
 #include "mozilla/glean/PFOGTransport.h"
 #include "mozilla/hal_sandbox/PHalParent.h"
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 #  include "mozilla/hwinference/HWInferenceParent.h"
 #  include "mozilla/hwinference/HWInferenceProcess.h"
 #  ifdef MOZ_WEBSPEECH
 #    include "mozilla/hwinference/PSpeechRecognitionChild.h"
 #  endif
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 #include "mozilla/intl/L10nRegistry.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/intl/OSPreferences.h"
@@ -288,7 +288,7 @@
 #  include "nsMacUtilsImpl.h"
 #endif
 
-#if defined(ANDROID) || defined(LINUX)
+#if defined(MOZ_WIDGET_ANDROID) || defined(LINUX)
 #  include "nsSystemInfo.h"
 #endif
 
@@ -296,7 +296,7 @@
 #  include "mozilla/Hal.h"
 #endif
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 #  include "gfxAndroidPlatform.h"
 #endif
 
@@ -1892,11 +1892,11 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
     fss->Forget(ChildID());
   }
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
   // A process that dies never sends its ReleaseHWInferenceConnection.
   mHWInferenceConnections = 0;
   mHWInferenceKeepAlive = nullptr;
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
   if (why == NormalShutdown && !mCalledClose) {
     // If we shut down normally but haven't called Close, assume somebody
@@ -5189,7 +5189,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateAudioIPCConnection(
   return IPC_OK();
 }
 
-#ifndef ANDROID
+#ifndef MOZ_WIDGET_ANDROID
 void ContentParent::EnsureHWInferenceConnection() {
   // Re-acquiring unconditionally: a no-op when the process and its actor are
   // up, and what recovers when either went away under us.
@@ -5236,7 +5236,7 @@ mozilla::ipc::IPCResult ContentParent::RecvReleaseHWInferenceConnection() {
   }
   return IPC_OK();
 }
-#endif  // !ANDROID
+#endif  // !MOZ_WIDGET_ANDROID
 
 already_AddRefed<extensions::PExtensionsParent>
 ContentParent::AllocPExtensionsParent() {
@@ -6317,7 +6317,7 @@ static void QueryFirstDailyLoad(const nsACString& aDomain,
 #endif
 }
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 void ContentParent::RecordAndroidAppLinkTelemetry(
     mozilla::performance::pageload_event::PageloadEventData* aPageloadData,
     const TimeStamp& aNavStartTime, CanonicalBrowsingContext* cbc) {
@@ -6377,7 +6377,7 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
       mozilla::performance::pageload_event::IsActiveClient());
 #endif
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   // Get network link type iff android.
   aPageloadEventData.set_networkType(UpdateNetworkLinkType());
 #endif
@@ -6398,7 +6398,7 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
   }
 #endif
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   if (!aBrowsingContext.IsNullOrDiscarded()) {
     RefPtr<CanonicalBrowsingContext> cbc = aBrowsingContext.get_canonical();
     if (cbc->IsOwnedByProcess(ChildID())) {
