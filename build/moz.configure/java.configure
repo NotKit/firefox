@@ -79,4 +79,29 @@ def check_java_tool(tool):
     return require_tool
 
 
-check_java_tool("java")
+java = check_java_tool("java")
+
+
+# On an Android target jni.h comes from the NDK sysroot. Everywhere else the
+# JDK holds the only copy, so put it on the include path for the whole build,
+# bindgen included — it parses headers that reach mozilla/jni/Refs.h too.
+@depends(
+    java,
+    target,
+    toolkit,
+    os_cppflags,
+    basic_bindgen_cflags,
+    when=compile_environment,
+)
+@imports(_from="os.path", _import="dirname")
+def jdk_jni_include_flags(java, target, toolkit, os_cppflags, bindgen_cflags):
+    if toolkit != "android" or target.os == "Android":
+        return
+    jdk = dirname(dirname(java))
+    os_dir = {"Linux": "linux", "Darwin": "darwin", "WINNT": "win32"}.get(target.kernel)
+    flags = ["-I%s/include" % jdk]
+    if os_dir:
+        flags.append("-I%s/include/%s" % (jdk, os_dir))
+    os_cppflags.extend(flags)
+    bindgen_cflags.extend(flags)
+

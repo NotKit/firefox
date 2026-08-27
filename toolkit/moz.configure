@@ -654,6 +654,9 @@ def toolkit_choices(target):
         # cairo-gtk3-x11-wayland - builds explicitly with X11 & Wayland backends
         return (
             "cairo-gtk3",
+            # The Android widget toolkit, built natively for glibc.
+            # MOZ_WIDGET_ANDROID is derived from this string, not from target.os.
+            "cairo-android",
             "cairo-gtk3-wayland",
             "cairo-gtk3-x11-wayland",
             "cairo-gtk3-wayland-only",
@@ -942,9 +945,9 @@ set_define("MOZ_WMF_MEDIA_ENGINE", True, when=wmfmediaengine)
 
 # FFmpeg H264/AAC Decoding Support
 # ==============================================================
-@depends(target)
-def ffmpeg(target):
-    return target.os not in ("Android", "WINNT")
+@depends(target, toolkit)
+def ffmpeg(target, toolkit):
+    return target.os not in ("Android", "WINNT") and toolkit != "android"
 
 
 set_config("MOZ_FFMPEG", True, when=ffmpeg)
@@ -1367,9 +1370,11 @@ set_config("MOZ_SYSTEM_WEBP", depends(when=system_webp)(lambda: True))
 
 # Build Freetype in the tree
 # ==============================================================
-@depends(target)
-def tree_freetype(target):
-    if target.os == "Android":
+@depends(target, toolkit)
+def tree_freetype(target, toolkit):
+    # gfx/2d, gfx/cairo and gfx/skia compile their FreeType backends from the
+    # toolkit, and only the gtk path ever looks for a system freetype.
+    if target.os == "Android" or toolkit == "android":
         return True
 
 
@@ -3578,8 +3583,12 @@ with only_when(toolkit_gtk):
 
 # Necko's wifi scanner
 # ==============================================================
-@depends(target)
-def necko_wifi_when(target):
+@depends(target, toolkit)
+def necko_wifi_when(target, toolkit):
+    # The Linux backend needs DBus, which is only configured for the gtk
+    # toolkit; the android toolkit scans wifi through Java instead.
+    if toolkit == "android":
+        return False
     return target.os in ("WINNT", "OSX", "DragonFly", "FreeBSD") or (
         target.kernel == "Linux" and target.os == "GNU"
     )

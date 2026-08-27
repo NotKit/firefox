@@ -120,7 +120,9 @@ imply_option("BROWSER_CHROME_URL", "chrome://geckoview/content/geckoview.xhtml")
 
 @depends(target)
 def check_target(target):
-    if target.os != "Android":
+    # This build targets mobile/android against a glibc Linux target, keeping
+    # only the widget toolkit; a Linux kernel is therefore also acceptable here.
+    if target.os != "Android" and target.kernel != "Linux":
         log.error(
             "You must specify --target=arm-linux-androideabi (or some "
             "other valid Android target) when building mobile/android."
@@ -137,6 +139,32 @@ include("../../toolkit/moz.configure")
 include("../../build/moz.configure/android-sdk.configure")
 include("../../build/moz.configure/java.configure")
 include("gradle.configure")
+
+
+# Off Android there is no NDK sysroot, so <android/*.h> and
+# <media/Ndk*.h> have no provider.  Point the build at a standalone copy.
+option(
+    "--with-android-headers",
+    nargs=1,
+    help="Path to a tree of NDK <android/*.h> headers, for an android-toolkit "
+    "build on a non-Android target",
+)
+
+
+@depends(
+    "--with-android-headers",
+    target,
+    toolkit,
+    os_cppflags,
+    basic_bindgen_cflags,
+    when=compile_environment,
+)
+def android_headers_include_flags(value, target, toolkit, os_cppflags, bindgen_cflags):
+    if not value or toolkit != "android" or target.os == "Android":
+        return
+    flags = ["-I%s" % value[0]]
+    os_cppflags.extend(flags)
+    bindgen_cflags.extend(flags)
 
 # Automation will set this via the TC environment.
 option(
