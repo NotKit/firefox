@@ -19,7 +19,9 @@ DIRS += [
 if not CONFIG["RELEASE_OR_BETA"] or CONFIG["MOZ_DEBUG"]:
     DIRS += ["automation"]
 
-if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+# viaduct-necko's Rust half is cfg(not(target_os = "android")), so its C++
+# backend has to follow the target rather than the toolkit.
+if CONFIG["OS_TARGET"] != "Android":
     DIRS += [
         "fxaccounts",
         "application-services/components/viaduct-necko",

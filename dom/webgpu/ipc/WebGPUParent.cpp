@@ -147,6 +147,28 @@ extern "C" bool wgpu_server_get_linux_dmabuf_modifiers(
 }
 #endif
 
+#if defined(XP_LINUX) && defined(MOZ_WIDGET_ANDROID)
+// wgpu_bindings' Rust half is compiled for target_os = "linux" and so calls
+// these whatever the widget toolkit is, but the DMABuf shared texture they
+// answer with needs gbm, which an android-toolkit build does not have.  The
+// calls are unreachable; these definitions exist so that libxul links.
+extern int32_t wgpu_server_get_dma_buf_fd(WGPUWebGPUParentPtr, WGPUTextureId) {
+  MOZ_ASSERT_UNREACHABLE("no DMABuf shared textures for the android toolkit");
+  return -1;
+}
+
+extern "C" bool wgpu_server_get_linux_dmabuf_modifiers(const uint64_t**,
+                                                       uint32_t*) {
+  return false;
+}
+
+extern const WGPUVkImageHandle* wgpu_server_get_vk_image_handle(
+    WGPUWebGPUParentPtr, WGPUTextureId) {
+  MOZ_ASSERT_UNREACHABLE("no DMABuf shared textures for the android toolkit");
+  return nullptr;
+}
+#endif
+
 #if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
 extern ffi::WGPUDMABufInfo wgpu_server_get_dma_buf_info(
     WGPUWebGPUParentPtr aParent, WGPUTextureId aId) {
