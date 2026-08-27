@@ -131,6 +131,14 @@ AutoSQLiteLifetime::AutoSQLiteLifetime() {
 void AutoSQLiteLifetime::Init() {
 #ifdef MOZ_MEMORY
   sResult = ::sqlite3_config(SQLITE_CONFIG_MALLOC, &memMethods);
+  if (sResult == SQLITE_MISUSE) {
+    // Another consumer in this process initialised SQLite before us, so it is
+    // too late to install our allocator.  That is a lost optimisation, not a
+    // reason to run without storage.  It happens when we share one SQLite
+    // library with the host, as under the Android translation layer.
+    NS_WARNING("sqlite3_config() refused: SQLite is already initialised");
+    sResult = SQLITE_OK;
+  }
 #else
   sResult = SQLITE_OK;
 #endif

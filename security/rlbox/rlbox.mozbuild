@@ -47,8 +47,14 @@ def RLBoxLibrary(name, use_segue=True):
     # Use Segue optimization. Since this requires passing the "-mfsgsbase", we
     # restrict this to compilers and architectures that support this flag.
     # Manually exclude android for now due to bug in upstream wasm2c support
+    #
+    # ATL: segue parks the sandbox heap base in the x86-64 %gs base and, with
+    # WASM_RT_SEGUE_FREE_SEGMENT, never puts the old value back. ART's x86-64
+    # stubs read Thread::Current() from %gs:THREAD_SELF_OFFSET, so the first
+    # sandbox call on a thread makes every later ART call on it segfault.
     if (
-        use_segue
+        False
+        and use_segue
         and CONFIG["CC_TYPE"] in ("clang", "gcc")
         and CONFIG["TARGET_CPU"] == "x86_64"
         and CONFIG["OS_TARGET"] != "Android"
