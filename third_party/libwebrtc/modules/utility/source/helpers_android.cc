@@ -96,7 +96,8 @@ AttachThreadScoped::AttachThreadScoped(JavaVM* jvm)
     // out why we sometimes see "Native thread exiting without having called
     // DetachCurrentThread" in logcat outputs.
     ALOGD("Attaching thread to JVM[tid=%d]", CurrentThreadId());
-    jint res = jvm->AttachCurrentThread(&env_, NULL);
+    // The JDK's JNI header takes void**, the NDK's takes JNIEnv**.
+    jint res = jvm->AttachCurrentThread(reinterpret_cast<void**>(&env_), NULL);
     attached_ = (res == JNI_OK);
     RTC_CHECK(attached_) << "AttachCurrentThread failed: " << res;
   }

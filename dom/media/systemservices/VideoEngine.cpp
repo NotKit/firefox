@@ -11,7 +11,7 @@
 #  include "mozilla/jni/Utils.h"
 #endif
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 namespace webrtc {
 int32_t SetCaptureAndroidVM(JavaVM* javaVM);
 }
@@ -25,7 +25,7 @@ mozilla::LazyLogModule gVideoEngineLog("VideoEngine");
               MOZ_LOG_EXPAND_ARGS args)
 #define LOG_ENABLED() MOZ_LOG_TEST(gVideoEngineLog, mozilla::LogLevel::Debug)
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 int VideoEngine::SetAndroidObjects() {
   LOG(("{}", __PRETTY_FUNCTION__));
 
