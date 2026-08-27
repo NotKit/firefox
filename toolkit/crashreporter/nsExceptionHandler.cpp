@@ -277,9 +277,14 @@ MOZ_GLIBCXX_CONSTINIT static nsCString childCrashNotifyPipe;
 
 #elif defined(XP_LINUX)
 static int clientSocketFd = -1;
-#  if !defined(MOZ_WIDGET_ANDROID)
+// The crash helper is a service only on Android and a launchable process
+// everywhere else, so serverSocketFd follows the target.  An android-toolkit
+// build on glibc launches it and still has the Java-side child entry points,
+// so it needs both.
+#  if !defined(__ANDROID__)
 static int serverSocketFd = -1;
-#  else
+#  endif
+#  if defined(MOZ_WIDGET_ANDROID)
 static int crashHelperClientFd = -1;
 #  endif
 #endif
@@ -1904,7 +1909,9 @@ static bool ShouldReport() {
 
 static void TerminateHandler() { MOZ_CRASH("Unhandled exception"); }
 
-#if !defined(MOZ_WIDGET_ANDROID)
+// LocateExecutable is used to find the crash helper, which only Android
+// does not launch itself.
+#if !defined(__ANDROID__)
 
 // Locate the specified executable and store its path as a native string in
 // the |aPath| so we can later invoke it from within the exception handler.
@@ -1928,7 +1935,7 @@ static nsresult LocateExecutable(nsIFile* aXREDirectory, const nsAString& aName,
   return NS_OK;
 }
 
-#endif  // !defined(MOZ_WIDGET_ANDROID)
+#endif  // !defined(__ANDROID__)
 
 static void InitializeAppNotes() {
   notesFieldLock = new Mutex("notesFieldLock");
@@ -3203,7 +3210,7 @@ static bool MoveToPending(nsIFile* dumpFile, nsIFile* extraFile,
 nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
   // Android is exempt from early return because the helper has already been
   // started and is unconditionally expecting a rendezvous.
-#if !defined(MOZ_WIDGET_ANDROID)
+#if !defined(__ANDROID__)
   if (!CrashReporterIsEnabled(force)) {
     return NS_OK;
   }
@@ -3224,7 +3231,7 @@ nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
     return NS_ERROR_FAILURE;
   }
 
-#if !defined(MOZ_WIDGET_ANDROID)
+#if !defined(__ANDROID__)
   // Locate the crash helper executable
   PathString crashHelperPath_temp;
   nsresult rv = LocateExecutable(aXREDirectory, CRASH_HELPER_FILENAME,
@@ -3238,7 +3245,7 @@ nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
   const char* crashHelperPathEnv = PR_GetEnv("MOZ_ANDROID_PACKAGE_NAME");
   MOZ_ASSERT(crashHelperPathEnv, "The application package name is required");
   crashHelperPath = crashHelperPathEnv;
-#endif  // !defined(MOZ_WIDGET_ANDROID)
+#endif  // !defined(__ANDROID__)
 
 #if defined(XP_WIN)
   childCrashNotifyPipe = nsCString("\\\\.\\pipe\\gecko-crash-server-pipe.");
@@ -3255,7 +3262,10 @@ nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
       notifyPipe, mozilla::BitwiseCast<const BreakpadChar*>(tempPath.get()),
       gToolkitBuildID);
 #elif defined(XP_LINUX)
-#  if !defined(MOZ_WIDGET_ANDROID)
+// The crash helper is a launchable process everywhere except on Android, where
+// it is a service.  This has to match the `target_os` cfg the Rust side uses,
+// not the widget toolkit: an android-toolkit build on glibc launches it.
+#  if !defined(__ANDROID__)
   if (!CrashGenerationServer::CreateReportChannel(&serverSocketFd,
                                                   &clientSocketFd)) {
     MOZ_CRASH("can't create crash reporter socketpair()");
@@ -3270,7 +3280,7 @@ nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
   if (crashHelperClient) {
     set_crash_report_path(crashHelperClient, tempPath.get());
   }
-#  endif  // !defined(MOZ_WIDGET_ANDROID)
+#  endif  // !defined(__ANDROID__)
 #elif defined(XP_MACOSX)
   childCrashNotifyPipe = nsCString("gecko-crash-server-pipe.");
   childCrashNotifyPipe.AppendInt(static_cast<int>(getpid()));

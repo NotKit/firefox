@@ -5,7 +5,10 @@ MainProcessInit
 ChildProcessInit
 GeckoViewOpenWindow
 #endif
-#ifdef ANDROID
+# The Java side reaches uniffi's ffi_* scaffolding by dlsym, so it has to be
+# exported. Ask the widget toolkit, not the target: an android-toolkit build
+# for a glibc triple has the same Java side and no ANDROID.
+#if defined(ANDROID) || defined(MOZ_WIDGET_ANDROID)
 *ffi*
 FT*
 #endif

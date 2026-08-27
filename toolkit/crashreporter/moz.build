@@ -69,7 +69,13 @@ if CONFIG["MOZ_CRASHREPORTER"]:
         if CONFIG["MOZ_OXIDIZED_BREAKPAD"]:
             DIRS += ["rust_minidump_writer_linux"]
 
-    if CONFIG["OS_TARGET"] != "Android":
+    # The GUI reporter is a gtk3 app on Linux and a Java one on Android; an
+    # android-toolkit build on glibc has neither, so it gets no client.
+    if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android" and CONFIG["OS_TARGET"] != "Android":
+        DIRS += [
+            "networking",
+        ]
+    elif CONFIG["OS_TARGET"] != "Android":
         DIRS += [
             "client/app",
             "networking",
