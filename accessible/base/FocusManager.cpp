@@ -51,7 +51,7 @@ LocalAccessible* FocusManager::FocusedLocalAccessible() const {
 }
 
 Accessible* FocusManager::FocusedAccessible() const {
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   // It's not safe to call FocusedLocalAccessible() except on the main thread.
   // Android might query RemoteAccessibles on the UI thread, which might call
   // FocusedAccessible(). Never try to get the focused LocalAccessible in this
@@ -91,7 +91,7 @@ Accessible* FocusManager::FocusedAccessible() const {
   DocAccessibleParent* focusedDoc =
       DocAccessibleParent::GetFrom(focusedContext);
   return focusedDoc ? focusedDoc->GetFocusedAcc() : nullptr;
-#endif  // defined(ANDROID)
+#endif  // defined(MOZ_WIDGET_ANDROID)
 }
 
 bool FocusManager::IsFocusWithin(const Accessible* aContainer) const {

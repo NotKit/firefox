@@ -75,7 +75,7 @@ CachedTableAccessible* CachedTableAccessible::GetFrom(Accessible* aAcc) {
     if (NS_IsMainThread()) {
       ClearOnShutdown(&sCachedTables);
     } else {
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
       NS_DispatchToMainThread(
           NS_NewRunnableFunction("CachedTableAccessible::GetFrom",
                                  [] { ClearOnShutdown(&sCachedTables); }));

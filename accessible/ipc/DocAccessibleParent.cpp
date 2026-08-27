@@ -33,7 +33,7 @@
 #  include "nsWinUtils.h"
 #endif
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 #  define ACQUIRE_ANDROID_LOCK \
     MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
 #else
@@ -103,7 +103,7 @@ bool DocAccessibleParent::RequestDomainsIfInactive(
   }
   aRequiredCacheDomains = GetCacheDomainSuperset(aRequiredCacheDomains);
   const uint64_t cacheDomains = aRequiredCacheDomains | activeCacheDomains;
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   // We might not be on the main Android thread, but we must be in order to
   // send IPDL messages. Dispatch to the main thread to set cache domains.
   NS_DispatchToMainThread(
@@ -812,7 +812,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvScrollingEvent(
     return IPC_OK();
   }
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   PlatformScrollingEvent(target, aType, aScrollX, aScrollY, aMaxScrollX,
                          aMaxScrollY);
 #else
@@ -1152,7 +1152,7 @@ void DocAccessibleParent::Destroy() {
   mShutdown = true;
   mBrowsingContext = nullptr;
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   if (FocusMgr() && FocusMgr()->IsFocusedRemoteDoc(this)) {
     FocusMgr()->SetFocusedRemoteDoc(nullptr);
   }
@@ -1350,7 +1350,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
     return IPC_OK();
   }
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   if (FocusMgr()) {
     FocusMgr()->SetFocusedRemoteDoc(this);
   }

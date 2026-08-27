@@ -58,7 +58,7 @@ Accessible* Pivot::SearchBackward(Accessible* aAnchor, PivotRule& aRule,
 
   while (acc && acc != mRoot) {
     Accessible* parent = acc->Parent();
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
     MOZ_ASSERT(
         acc->IsLocal() || (acc->IsRemote() && parent->IsRemote()),
         "Pivot::SearchBackward climbed out of remote subtree in Android!");
@@ -139,7 +139,7 @@ Accessible* Pivot::SearchForward(Accessible* aAnchor, PivotRule& aRule,
         break;
       }
       temp = temp->Parent();
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
       MOZ_ASSERT(
           acc->IsLocal() || (acc->IsRemote() && temp->IsRemote()),
           "Pivot::SearchForward climbed out of remote subtree in Android!");

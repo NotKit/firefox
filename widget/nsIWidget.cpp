@@ -2466,7 +2466,7 @@ already_AddRefed<nsIBidiKeyboard> nsIWidget::CreateBidiKeyboard() {
   return CreateBidiKeyboardInner();
 }
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 already_AddRefed<nsIBidiKeyboard> nsIWidget::CreateBidiKeyboardInner() {
   // no bidi keyboard implementation
   return nullptr;

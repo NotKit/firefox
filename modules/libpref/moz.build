@@ -92,7 +92,7 @@ pref_groups = [
     "widget",
     "zoom",
 ]
-if CONFIG["OS_TARGET"] == "Android":
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     pref_groups += [
         "android",
         "consoleservice",
