@@ -48,7 +48,7 @@
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  // JS::SourceText
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 #  include <android/log.h>
 
 #  include "XREShellData.h"
@@ -327,7 +327,7 @@ static bool Dump(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   __android_log_print(ANDROID_LOG_INFO, "Gecko", "%s", utf8str.get());
 #endif
 #ifdef XP_WIN
@@ -558,7 +558,7 @@ static bool SimulateNoScriptActivity(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 static bool ChangeTestShellDir(JSContext* cx, unsigned argc, Value* vp) {
   // This method should only be used by testing/xpcshell/head.js to change to
   // the correct directory on Android Remote XPCShell tests.
@@ -623,7 +623,7 @@ static const JSFunctionSpec glob_functions[] = {
     JS_FN("btoa",            xpc::Btoa,      1,0),
     JS_FN("setInterruptCallback", SetInterruptCallback, 1,0),
     JS_FN("simulateNoScriptActivity", SimulateNoScriptActivity, 1,0),
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
     JS_FN("changeTestShellDir", ChangeTestShellDir, 1,0),
 #endif
 #ifdef ENABLE_TESTS
@@ -1003,7 +1003,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
   int result = 0;
   nsresult rv;
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   gOutFile = aShellData->outFile;
   gErrFile = aShellData->errFile;
 #else

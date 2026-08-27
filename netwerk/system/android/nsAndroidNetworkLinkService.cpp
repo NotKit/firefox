@@ -186,7 +186,10 @@ nsAndroidNetworkLinkService::GetPlatformDNSIndications(
   // When Android has a private DNS (DNS-over-TLS) provider active, the system
   // resolver may return split-horizon results, so we should not enable DoH.
   // GeckoNetworkManager keeps this value up to date via a network callback.
-  if (java::GeckoNetworkManager::IsPrivateDnsActive()) {
+  // isPrivateDnsActive was added after GeckoView 153, which ATL runs this
+  // libxul against, and an absent method is fatal in the lookup.
+  if (jni::HasMember<java::GeckoNetworkManager::IsPrivateDnsActive_t>() &&
+      java::GeckoNetworkManager::IsPrivateDnsActive()) {
     *aPlatformDNSIndications |= nsINetworkLinkService::PRIVATE_DNS_DETECTED;
   }
 

@@ -4889,7 +4889,9 @@ void ContentChild::ConfigureThreadPerformanceHints(
       canUsePerformanceHintSession = mPerformanceHintSession != nullptr;
     }
 
-#ifdef MOZ_WIDGET_ANDROID
+// Bionic only: pthread_gettid_np has no glibc equivalent, and the affinity
+// churn this compensates for is the Android framework's, not the toolkit's.
+#ifdef __ANDROID__
     // On Android if we are unable to use PerformanceHintManager then fall back
     // to setting the stylo threads' affinities to the performant cores. Android
     // automatically sets each thread's affinity to all cores when a process is

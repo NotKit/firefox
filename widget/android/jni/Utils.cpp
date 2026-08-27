@@ -175,7 +175,9 @@ JNIEnv* GetEnvForThread() {
   // We don't have a saved JNIEnv, so try to get one.
   // AttachCurrentThread() does the same thing as GetEnv() when a thread is
   // already attached, so we don't have to call GetEnv() at all.
-  if (!sJavaVM->AttachCurrentThread(&env, &attachArgs)) {
+  // The JDK's JNI header takes void**, the NDK's takes JNIEnv**.
+  if (!sJavaVM->AttachCurrentThread(reinterpret_cast<void**>(&env),
+                                    &attachArgs)) {
     MOZ_ASSERT(env);
     MOZ_ALWAYS_TRUE(!pthread_setspecific(sThreadEnvKey, env));
     return env;
@@ -287,7 +289,7 @@ void SetNativeHandle(JNIEnv* env, jobject instance, uintptr_t handle) {
                     static_cast<jlong>(handle));
 }
 
-jclass GetClassRef(JNIEnv* aEnv, const char* aClassName) {
+static jclass FindClassRef(JNIEnv* aEnv, const char* aClassName) {
   // First try the default class loader.
   auto classRef = Class::LocalRef::Adopt(aEnv, aEnv->FindClass(aClassName));
 
@@ -303,6 +305,24 @@ jclass GetClassRef(JNIEnv* aEnv, const char* aClassName) {
 
   if (classRef && !aEnv->ExceptionCheck()) {
     return classRef.Forget();
+  }
+  return nullptr;
+}
+
+bool HasClass(const char* aClassName) {
+  JNIEnv* const env = GetEnvForThread();
+  const jclass cls = FindClassRef(env, aClassName);
+  if (!cls) {
+    env->ExceptionClear();
+    return false;
+  }
+  env->DeleteLocalRef(cls);
+  return true;
+}
+
+jclass GetClassRef(JNIEnv* aEnv, const char* aClassName) {
+  if (const jclass cls = FindClassRef(aEnv, aClassName)) {
+    return cls;
   }
 
   __android_log_print(

@@ -7,6 +7,7 @@
 #include "HalTypes.h"
 
 #include "AndroidBuild.h"
+#include "mozilla/jni/Utils.h"
 
 #include <stdint.h>
 #include <sys/types.h>
@@ -68,6 +69,12 @@ class __attribute__((
 };
 
 static APerformanceHintManager* InitManager() {
+  // A fork/exec content child has no JVM, so java::sdk::Build below would
+  // dereference a null sJavaVM. Everything else here is JNI-guarded already.
+  if (!jni::IsAvailable()) {
+    return nullptr;
+  }
+
   if (__builtin_available(android 33, *)) {
     // At the time of writing we are only aware of PerformanceHintManager being
     // implemented on Tensor devices (Pixel 6 and 7 families). On most devices
@@ -99,8 +106,14 @@ UniquePtr<hal::PerformanceHintSession> CreatePerformanceHintSession(
   }
 
   nsTArray<pid_t> tids(aThreads.Length());
+#ifdef __BIONIC__
   std::transform(aThreads.cbegin(), aThreads.cend(), MakeBackInserter(tids),
                  [](pthread_t handle) { return pthread_gettid_np(handle); });
+#else
+  // pthread_gettid_np is bionic-only and glibc has no equivalent, so the
+  // thread ids a hint session is created from cannot be produced here.
+  return nullptr;
+#endif
 
   if (__builtin_available(android 33, *)) {
     return AndroidPerformanceHintSession::Create(

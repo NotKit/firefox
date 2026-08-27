@@ -28,7 +28,7 @@ struct XREShellData {
    */
   sandbox::BrokerServices* sandboxBrokerServices;
 #endif
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
   FILE* outFile;
   FILE* errFile;
   int crashChildNotificationSocket;

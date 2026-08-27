@@ -74,6 +74,7 @@
 #include "ImageDecoderSupport.h"
 #include "JavaBuiltins.h"
 #include "MozLogSupport.h"
+#include "mozilla/jni/Utils.h"
 #include "ScreenHelperAndroid.h"
 #include "WebExecutorSupport.h"
 
@@ -413,7 +414,13 @@ nsAppShell::nsAppShell()
     mozilla::widget::Base64UtilsSupport::Init();
     nsWindow::InitNatives();
     mozilla::widget::MozLogSupport::Init();
-    mozilla::widget::GeckoSensorSupport::Init();
+    // GeckoView 153, which ATL runs this libxul against, has no GeckoSensor
+    // class at all, and registering natives on a class that is not there is
+    // fatal. Without it sensors stay unavailable, which is what hal's fallback
+    // does anyway.
+    if (jni::HasClass(java::GeckoSensor::name)) {
+      mozilla::widget::GeckoSensorSupport::Init();
+    }
 
     java::GeckoThread::SetState(java::GeckoThread::State::JNI_READY());
 
@@ -472,7 +479,10 @@ nsresult nsAppShell::Init() {
 
     if (XRE_IsParentProcess()) {
       obsServ->AddObserver(this, "chrome-document-loaded", false);
-    } else {
+    } else if (jni::IsAvailable()) {
+      // Both handlers call GeckoEditableSupport::SetOnBrowserChild, which
+      // constructs a Java GeckoEditableChild. A fork/exec content child has no
+      // JVM, so registering them there is a null-sJavaVM crash on first load.
       obsServ->AddObserver(this, "content-document-global-created", false);
       obsServ->AddObserver(this, "geckoview-content-global-transferred", false);
     }
