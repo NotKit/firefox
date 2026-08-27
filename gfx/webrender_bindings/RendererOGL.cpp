@@ -4,6 +4,10 @@
 
 #include "RendererOGL.h"
 
+#include <cstdlib>
+
+#include "mozilla/Debug.h"
+
 #include "GLContext.h"
 #include "base/task.h"
 #include "mozilla/Logging.h"
@@ -159,6 +163,15 @@ void RendererOGL::SetFramePublishId(FramePublishId aPublishId) {
   wr_renderer_set_target_frame_publish_id(mRenderer, aPublishId);
 }
 
+// Android-toolkit-on-glibc builds only.  MOZ_ATL_SWAP_TRACE=1 prints the present path.
+static bool AtlSwapTrace() {
+  static const bool on = [] {
+    const char* const v = getenv("MOZ_ATL_SWAP_TRACE");
+    return v && v[0] && v[0] != '0';
+  }();
+  return on;
+}
+
 void RendererOGL::Update() {
   mCompositor->Update();
   if (mCompositor->MakeCurrent()) {
@@ -265,6 +278,9 @@ RenderedFrameId RendererOGL::UpdateAndRender(
   // until explicitly cleared by CheckAndClearDidRasterize().
   mLastFrameDidRasterize = mLastFrameDidRasterize || didRasterize;
   if (!rendered) {
+    if (AtlSwapTrace()) {
+      printf_stderr("[atl-swap] RendererOGL wr_renderer_render returned 0\n");
+    }
     if (present) {
       mCompositor->CancelFrame();
     }
@@ -314,6 +330,13 @@ RenderedFrameId RendererOGL::UpdateAndRender(
     // the contents of the back buffer before any calls to SwapBuffers which
     // might invalidate it.
     MaybeRecordFrame(mLastPipelineInfo);
+    if (AtlSwapTrace()) {
+      printf_stderr(
+          "[atl-swap] RendererOGL present size=%dx%d fullRender=%d "
+          "rendered=%d dirtyRects=%zu\n",
+          size.width, size.height, (int)fullRender, (int)rendered,
+          dirtyRects.Length());
+    }
     frameId = mCompositor->EndFrame(dirtyRects);
     MOZ_ASSERT(needPostRenderCall);
     mCompositor->GetWidget()->PostRender(&widgetContext);

@@ -8,6 +8,8 @@
 #include <stdint.h>  // for uint32_t, uint8_t
 #include <stdlib.h>  // for free, malloc
 
+#include <cstdlib>
+
 #include "GLBlitHelper.h"
 #include "GLContext.h"          // for GLContext
 #include "GLContextProvider.h"  // for GLContextProvider
@@ -21,6 +23,7 @@
 #include "gfxPlatform.h"            // for gfxPlatform
 #include "gfxRect.h"                // for gfxRect
 #include "gfxUtils.h"               // for gfxUtils, etc
+#include "mozilla/Debug.h"
 #include "mozilla/Preferences.h"    // for Preferences
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_gfx.h"
@@ -1404,6 +1407,15 @@ void WriteSnapshotToDumpFile(Compositor* aCompositor, DrawTarget* aTarget) {
 }
 #endif
 
+// Android-toolkit-on-glibc builds only.  MOZ_ATL_SWAP_TRACE=1 prints the present path.
+static bool AtlSwapTrace() {
+  static const bool on = [] {
+    const char* const v = getenv("MOZ_ATL_SWAP_TRACE");
+    return v && v[0] && v[0] != '0';
+  }();
+  return on;
+}
+
 void CompositorOGL::EndFrame() {
   AUTO_PROFILER_LABEL("CompositorOGL::EndFrame", GRAPHICS);
 
@@ -1429,6 +1441,9 @@ void CompositorOGL::EndFrame() {
   mShouldInvalidateWindow = false;
 
   if (mTarget) {
+    if (AtlSwapTrace()) {
+      printf_stderr("[atl-swap] CompositorOGL::EndFrame to mTarget, no swap\n");
+    }
     CopyToTarget(mTarget, mTargetBounds.TopLeft(), Matrix());
     mGLContext->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, 0);
     mTarget = nullptr;
@@ -1448,6 +1463,14 @@ void CompositorOGL::EndFrame() {
   InsertFrameDoneSync();
 
   mGLContext->SetDamage(mCurrentFrameInvalidRegion);
+  if (AtlSwapTrace()) {
+    const auto d = mCurrentFrameInvalidRegion.GetBounds();
+    printf_stderr(
+        "[atl-swap] CompositorOGL::EndFrame damageRects=%u bounds=%d,%d %dx%d "
+        "-> SwapBuffers\n",
+        mCurrentFrameInvalidRegion.GetNumRects(), d.X(), d.Y(), d.Width(),
+        d.Height());
+  }
   mGLContext->SwapBuffers();
   mGLContext->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, 0);
 

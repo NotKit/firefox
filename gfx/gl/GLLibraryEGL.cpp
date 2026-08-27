@@ -44,6 +44,7 @@
 #  include <gdk/gdk.h>
 #endif  // MOZ_WAYLAND
 
+#include <cstdlib>
 #include <mutex>  // for call_once
 
 namespace mozilla {
@@ -959,10 +960,54 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
   return CreateDisplayLocked(aFlags, out_failureId, lock);
 }
 
+#ifdef MOZ_WIDGET_ANDROID
+/*
+ * Android-toolkit-on-glibc builds only; never to be filed upstream.  Arm 3 of
+ * MOZ_ATL_ANW_EGLSURFACE (see GLContextProviderEGL.cpp).
+ *
+ * Arm 2 got an EGLSurface out of ATL's ANativeWindow and then took
+ * EGL_BAD_SURFACE on every use of it, because the surface lives on ATL's
+ * EGLDisplay while EglDisplay::mDisplay is Gecko's own.  mDisplay is const
+ * and every one of EglDisplay's ~40 f* wrappers binds it, and the same
+ * EglDisplay also owns pbuffer surfaces that really are Gecko's, so routing
+ * individual calls elsewhere would need per-surface bookkeeping.  Making the
+ * one display be ATL's fixes eglMakeCurrent, eglSwapBuffers, eglQuerySurface
+ * and eglDestroySurface at once.
+ */
+extern "C" {
+// Default visibility: gcc_hidden.h makes every Gecko declaration hidden, and
+// lld cannot bind a hidden undefined symbol to a shared library.
+__attribute__((visibility("default"))) EGLDisplay
+ANativeWindow_getEGLDisplay(void);
+}
+
+static std::shared_ptr<EglDisplay> AtlGetAndInitDisplay(
+    GLLibraryEGL& egl, const StaticMutexAutoLock& aProofOfLock) {
+  const EGLDisplay atlDisplay = ANativeWindow_getEGLDisplay();
+  printf_stderr("[atl-anw] display arm 3: atl-display=%p host-default=%p\n",
+                atlDisplay, egl.fGetDisplay(EGL_DEFAULT_DISPLAY));
+  if (!atlDisplay) return nullptr;
+  return EglDisplay::Create(egl, atlDisplay, false, aProofOfLock);
+}
+#endif  // MOZ_WIDGET_ANDROID
+
 std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplayLocked(
     const EGLCreateDisplayFlags& aFlags, nsACString* const out_failureId,
     const StaticMutexAutoLock& aProofOfLock) {
   std::shared_ptr<EglDisplay> ret;
+
+#ifdef MOZ_WIDGET_ANDROID
+  // Arm 3 only, and only for the window/compositor context: that is the sole
+  // caller that passes mForceAccel, so offscreen displays are left alone.
+  {
+    const char* const atlMode = getenv("MOZ_ATL_ANW_EGLSURFACE");
+    if (atlMode && atlMode[0] == '3' && aFlags.mForceAccel) {
+      ret = AtlGetAndInitDisplay(*this, aProofOfLock);
+      if (ret) return ret;
+      printf_stderr("[atl-anw] display arm 3 failed; falling through\n");
+    }
+  }
+#endif
 
   MOZ_ASSERT(!(aFlags.mForceAccel && aFlags.mForceSoftware),
              "Cannot force accelerated and software display");

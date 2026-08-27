@@ -29,7 +29,9 @@
 #  ifdef MOZ_WIDGET_ANDROID
 #    include <android/native_window.h>
 #    include <android/native_window_jni.h>
+#    include <cstdlib>
 
+#    include "mozilla/Debug.h"
 #    include "mozilla/jni/Utils.h"
 #    include "mozilla/widget/AndroidCompositorWidget.h"
 #  endif
@@ -172,6 +174,93 @@ static EGLSurface CreateFallbackSurface(EglDisplay& egl,
   return surface;
 }
 
+#ifdef MOZ_WIDGET_ANDROID
+/*
+ * Android-toolkit-on-glibc builds only; never to be filed upstream.
+ *
+ * ATL's ANativeWindow is its own struct, not a wl_egl_window, so a host EGL
+ * handed the raw pointer reads ATL's `int height` where wl_egl_window keeps
+ * `driver_private` and refuses the window (EGL_BAD_ALLOC out of Mesa's
+ * dri2_create_surface).  ATL's libandroid.so.0 exports two entry points for
+ * exactly the native-glibc client this build is, which unwrap the window on
+ * ATL's own side (atlas src/libandroid/native_window.h, egl.c).  Neither is an
+ * NDK entry point, so they are declared here rather than pulled from a header.
+ *
+ * MOZ_ATL_ANW_EGLSURFACE picks the arm at run time so that one libxul serves
+ * both sides of the A/B:
+ *   unset or 0  the upstream path, byte-for-byte
+ *   1           ATL's display + the EGLConfig Gecko chose on its own display
+ *   2           ATL's display + a config re-chosen on that display
+ *   3           like 1, but EglDisplay::mDisplay is ATL's display too, so the
+ *               config, the context and every later eglMakeCurrent /
+ *               eglSwapBuffers / eglQuerySurface / eglDestroySurface are all
+ *               on it (the hook is in GLLibraryEGL.cpp CreateDisplayLocked)
+ */
+extern "C" {
+// Default visibility: gcc_hidden.h makes every Gecko declaration hidden, and
+// lld cannot bind a hidden undefined symbol to a shared library.
+__attribute__((visibility("default"))) EGLDisplay
+ANativeWindow_getEGLDisplay(void);
+__attribute__((visibility("default"))) EGLSurface
+ANativeWindow_createEGLSurface(ANativeWindow* window, EGLDisplay display,
+                               EGLConfig config, const EGLint* attrib_list);
+}
+
+static EGLSurface AtlCreateSurfaceFromNativeWindow(EglDisplay& egl,
+                                                   ANativeWindow* nativeWindow,
+                                                   EGLConfig config,
+                                                   const char* mode) {
+  const EGLDisplay atlDisplay = ANativeWindow_getEGLDisplay();
+  EGLConfig atlConfig = config;
+
+  if (mode[0] == '2') {
+    static const EGLint attribs[] = {LOCAL_EGL_SURFACE_TYPE,
+                                     LOCAL_EGL_WINDOW_BIT,
+                                     LOCAL_EGL_RENDERABLE_TYPE,
+                                     LOCAL_EGL_OPENGL_ES2_BIT,
+                                     LOCAL_EGL_RED_SIZE,
+                                     8,
+                                     LOCAL_EGL_GREEN_SIZE,
+                                     8,
+                                     LOCAL_EGL_BLUE_SIZE,
+                                     8,
+                                     LOCAL_EGL_ALPHA_SIZE,
+                                     8,
+                                     LOCAL_EGL_NONE};
+    // GLLibraryEGL::fChooseConfig is private to EglDisplay, and EglDisplay
+    // binds its own mDisplay, so the host symbol is taken directly.
+    using ChooseConfigFn = EGLBoolean (*)(EGLDisplay, const EGLint*, EGLConfig*,
+                                          EGLint, EGLint*);
+    const auto chooseConfig =
+        (ChooseConfigFn)dlsym(RTLD_DEFAULT, "eglChooseConfig");
+    EGLConfig chosen = nullptr;
+    EGLint num = 0;
+    if (chooseConfig &&
+        chooseConfig(atlDisplay, attribs, &chosen, 1, &num) && num >= 1) {
+      atlConfig = chosen;
+    } else {
+      printf_stderr(
+          "[atl-anw] eglChooseConfig on the ATL display found nothing "
+          "(chooseConfig=%p, 0x%04x); keeping Gecko's config\n",
+          (void*)chooseConfig, egl.mLib->fGetError());
+    }
+  }
+
+  printf_stderr(
+      "[atl-anw] mode=%s window=%p gecko-display=%p atl-display=%p "
+      "gecko-config=%p atl-config=%p\n",
+      mode, (void*)nativeWindow, egl.mDisplay, atlDisplay, config, atlConfig);
+
+  const EGLSurface surface = ANativeWindow_createEGLSurface(
+      nativeWindow, atlDisplay, atlConfig, nullptr);
+  // No fGetError() here: eglGetError clears the error, and reading it before
+  // the caller's own fGetError() below made arm 1 report EGL_SUCCESS for a
+  // surface that had failed with EGL_BAD_CONFIG.
+  printf_stderr("[atl-anw] ANativeWindow_createEGLSurface -> %p\n", surface);
+  return surface;
+}
+#endif  // MOZ_WIDGET_ANDROID
+
 static EGLSurface CreateSurfaceFromNativeWindow(
     EglDisplay& egl, const EGLNativeWindowType window, const EGLConfig config) {
   MOZ_ASSERT(window);
@@ -185,8 +274,14 @@ static EGLSurface CreateSurfaceFromNativeWindow(
     gfxCriticalNote << "Failed to obtain native window from Surface";
     return EGL_NO_SURFACE;
   }
-  newSurface =
-      egl.mLib->fCreateWindowSurface(egl.mDisplay, config, nativeWindow, 0);
+  const char* const atlMode = getenv("MOZ_ATL_ANW_EGLSURFACE");
+  if (atlMode && atlMode[0] && atlMode[0] != '0') {
+    newSurface =
+        AtlCreateSurfaceFromNativeWindow(egl, nativeWindow, config, atlMode);
+  } else {
+    newSurface =
+        egl.mLib->fCreateWindowSurface(egl.mDisplay, config, nativeWindow, 0);
+  }
   ANativeWindow_release(nativeWindow);
 #else
   newSurface = egl.fCreateWindowSurface(config, window, nullptr);
@@ -505,11 +600,53 @@ Maybe<SymbolLoader> GLContextEGL::GetSymbolLoader() const {
   return mEgl->mLib->GetSymbolLoader();
 }
 
+// Android-toolkit-on-glibc builds only.  MOZ_ATL_SWAP_TRACE=1 prints the present path.
+static bool AtlSwapTrace() {
+  static const bool on = [] {
+    const char* const v = getenv("MOZ_ATL_SWAP_TRACE");
+    return v && v[0] && v[0] != '0';
+  }();
+  return on;
+}
+
+#ifdef MOZ_WIDGET_ANDROID
+/*
+ * Android-toolkit-on-glibc builds only; never to be filed upstream.
+ *
+ * On the phone the EGL under ATL is libhybris.  Its libEGL.so.1 exports
+ * eglSwapBuffers and nothing else that swaps: the Wayland windowing module
+ * posts the frame from hybris' own eglSwapBuffers wrapper (ws_finishSwap ->
+ * WaylandNativeWindow::finishSwap, which is what runs wl_surface.attach,
+ * damage and commit).  eglSwapBuffersWithDamageKHR is not a hybris entry
+ * point at all; eglGetProcAddress hands back the Adreno driver's own, which
+ * swaps the driver's buffers, returns EGL_TRUE, and never posts anything to
+ * the wl_surface.  So the with-damage path silently drops every frame.
+ *
+ * Skip it whenever an ATL ANativeWindow arm is in use.  MOZ_ATL_SWAP_DAMAGE=1
+ * puts it back for the A/B.
+ */
+static bool AtlSkipSwapDamage() {
+  static const bool skip = [] {
+    const char* const force = getenv("MOZ_ATL_SWAP_DAMAGE");
+    if (force && force[0] && force[0] != '0') return false;
+    const char* const arm = getenv("MOZ_ATL_ANW_EGLSURFACE");
+    return arm && arm[0] && arm[0] != '0';
+  }();
+  return skip;
+}
+#endif  // MOZ_WIDGET_ANDROID
+
 bool GLContextEGL::SwapBuffers() {
   EGLSurface surface =
       mSurfaceOverride != EGL_NO_SURFACE ? mSurfaceOverride : mSurface;
   if (surface) {
-    if ((mEgl->IsExtensionSupported(
+#ifdef MOZ_WIDGET_ANDROID
+    const bool skipDamage = AtlSkipSwapDamage();
+#else
+    const bool skipDamage = false;
+#endif
+    if (!skipDamage &&
+        (mEgl->IsExtensionSupported(
              EGLExtension::EXT_swap_buffers_with_damage) ||
          mEgl->IsExtensionSupported(
              EGLExtension::KHR_swap_buffers_with_damage))) {
@@ -522,11 +659,29 @@ bool GLContextEGL::SwapBuffers() {
         rects.push_back(r.Height());
       }
       mDamageRegion.SetEmpty();
-      return mEgl->fSwapBuffersWithDamage(surface, rects.data(),
-                                          rects.size() / 4);
+      const bool ok = mEgl->fSwapBuffersWithDamage(surface, rects.data(),
+                                                   rects.size() / 4);
+      if (AtlSwapTrace()) {
+        printf_stderr(
+            "[atl-swap] eglSwapBuffersWithDamage surf=%p override=%p nrects=%zu"
+            " -> %d (0x%04x)\n",
+            surface, mSurfaceOverride, rects.size() / 4, (int)ok,
+            mEgl->mLib->fGetError());
+      }
+      return ok;
     }
-    return mEgl->fSwapBuffers(surface);
+    const bool ok = mEgl->fSwapBuffers(surface);
+    if (AtlSwapTrace()) {
+      printf_stderr("[atl-swap] eglSwapBuffers surf=%p override=%p -> %d "
+                    "(0x%04x)\n",
+                    surface, mSurfaceOverride, (int)ok,
+                    mEgl->mLib->fGetError());
+    }
+    return ok;
   } else {
+    if (AtlSwapTrace()) {
+      printf_stderr("[atl-swap] SwapBuffers with no surface\n");
+    }
     return false;
   }
 }
