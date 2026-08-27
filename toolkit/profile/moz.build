@@ -38,7 +38,7 @@ if CONFIG["OS_ARCH"] == "Darwin" and CONFIG["NIGHTLY_BUILD"]:
 if CONFIG["OS_ARCH"] == "WINNT":
     UNIFIED_SOURCES += ["ProfileUnlockerWin.cpp"]
 
-if CONFIG["OS_TARGET"] == "Android":
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     UNIFIED_SOURCES += ["ProfileUnlockerAndroid.cpp"]
 
 LOCAL_INCLUDES += [

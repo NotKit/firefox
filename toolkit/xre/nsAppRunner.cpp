@@ -231,6 +231,8 @@
 #include "GTestRunner.h"
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include <android/log.h>
+
 #  include "gfxAndroidPlatform.h"
 #  include "mozilla/java/GeckoAppShellWrappers.h"
 #endif

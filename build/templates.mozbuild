@@ -8,8 +8,10 @@ def Binary():
     """Generic template for target binaries. Meant to be used by other
     templates."""
 
-    # Add -llog by default, since we use it all over the place.
-    if CONFIG["OS_TARGET"] == "Android":
+    # Add -llog by default, since we use it all over the place.  Keyed on the
+    # toolkit, not the target: an android-toolkit build on glibc logs the same
+    # way, and gets liblog from the -L shim mozconfig-atl-glibc sets up.
+    if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
         OS_LIBS += ["log"]
 
 

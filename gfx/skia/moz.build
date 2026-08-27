@@ -545,8 +545,12 @@ if CONFIG['MOZ_ENABLE_SKIA_PDF']:
         'skia/src/pdf/SkPDFType1Font.cpp',
     ]
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'android':
+    # SkLog_android.cpp is empty without SK_BUILD_FOR_ANDROID.
+    if CONFIG['OS_TARGET'] == 'Android':
+        UNIFIED_SOURCES += ['skia/src/ports/SkLog_android.cpp']
+    else:
+        UNIFIED_SOURCES += ['skia/src/ports/SkLog_stdio.cpp']
     UNIFIED_SOURCES += [
-        'skia/src/ports/SkLog_android.cpp',
         'skia/src/ports/SkOSFile_posix.cpp',
     ]
     SOURCES += [

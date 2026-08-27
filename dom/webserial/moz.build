@@ -26,9 +26,9 @@ if CONFIG["OS_TARGET"] == "WINNT":
         "cfgmgr32",
         "setupapi",
     ]
-elif (CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] != "iOS") or CONFIG[
-    "OS_TARGET"
-] == "Linux":
+elif (CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] != "iOS") or (
+    CONFIG["OS_TARGET"] == "Linux" and CONFIG["MOZ_WIDGET_TOOLKIT"] != "android"
+):
     UNIFIED_SOURCES += [
         "PosixSerialPlatformService.cpp",
     ]
