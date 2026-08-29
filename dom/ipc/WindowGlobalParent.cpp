@@ -1062,11 +1062,16 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
   // comments below in `Run` and in `DispatchBeforeUnloadToSubtree`.
   void RunChildNavigables() {
     MOZ_DIAGNOSTIC_ASSERT(mWGP->BrowsingContext()->IsTop());
-    Run(mWGP->BrowsingContext()->GetContentParent(), 0);
+    ContentParent* top = mWGP->BrowsingContext()->GetContentParent();
+    // Null means the top level navigable is in this process.  RunTraversable
+    // has already dispatched to it, so it has to be skipped here just like a
+    // real content process would be, or its subtree gets "beforeunload" twice.
+    Run(top, 0, nullptr, /* aIgnoreInProcess */ !top);
   }
 
   void Run(ContentParent* aIgnoreProcess = nullptr, uint32_t aTimeout = 0,
-           nsDocShellLoadState* aDocShellLoadState = nullptr) {
+           nsDocShellLoadState* aDocShellLoadState = nullptr,
+           bool aIgnoreInProcess = false) {
     MOZ_ASSERT(mState == State::UNINITIALIZED);
     mState = State::WAITING;
 
@@ -1075,6 +1080,9 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
     AutoTArray<ContentParent*, 8> seen;
     if (aIgnoreProcess) {
       seen.AppendElement(aIgnoreProcess);
+    } else if (aIgnoreInProcess) {
+      // A null entry is how "this process" is spelled in the walk below.
+      seen.AppendElement(nullptr);
     }
 
     BrowsingContext* bc = mWGP->GetBrowsingContext();
@@ -1089,18 +1097,39 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
     // level window.
     if (aDocShellLoadState) {
       MOZ_DIAGNOSTIC_ASSERT(Navigation::IsAPIEnabled());
+      // Null whenever the top level navigable is in this process, which is
+      // every load when there are no content processes at all.  The walk in
+      // the branch below has always handled that; this one did not, and sent
+      // on a null actor -- which only faults much later, in
+      // nsDocShellLoadState::Serialize, reading IProtocol::mToplevel off it.
       ContentParent* cp = mWGP->GetContentParent();
       mPendingRequests++;
       // Here eDontPromptAndUnload means that we ignore beforeunload handlers,
       // but we still need to handle the traversable navigate handler.
       mozilla::NotNull<RefPtr<nsDocShellLoadState>> loadState =
           WrapNotNull(aDocShellLoadState);
-      if (mAction ==
-          nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload) {
-        cp->SendDispatchNavigateToTraversable(bc, loadState, resolve, reject);
+      bool navigateOnly =
+          mAction ==
+          nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload;
+      if (cp) {
+        if (navigateOnly) {
+          cp->SendDispatchNavigateToTraversable(bc, loadState, resolve, reject);
+        } else {
+          cp->SendDispatchBeforeUnloadToSubtree(bc, Some(loadState), resolve,
+                                                reject);
+        }
       } else {
-        cp->SendDispatchBeforeUnloadToSubtree(bc, Some(loadState), resolve,
-                                              reject);
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "DispatchNavigateToTraversable",
+            [bc = RefPtr{bc}, loadState, navigateOnly, resolve]() {
+              if (navigateOnly) {
+                ContentChild::DispatchNavigateToTraversable(bc, loadState,
+                                                            resolve);
+              } else {
+                ContentChild::DispatchBeforeUnloadToSubtree(bc, Some(loadState),
+                                                            resolve);
+              }
+            }));
       }
     } else {
       bc->PreOrderWalk([&](dom::BrowsingContext* aBC) {

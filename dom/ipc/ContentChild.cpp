@@ -4570,14 +4570,25 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchNavigateToTraversable(
     const MaybeDiscarded<BrowsingContext>& aTraversable,
     const mozilla::NotNull<RefPtr<nsDocShellLoadState>>& aLoadState,
     DispatchNavigateToTraversableResolver&& aResolver) {
-  if (aTraversable.IsNullOrDiscarded() || !aTraversable->GetDocShell()) {
+  if (aTraversable.IsNullOrDiscarded()) {
     aResolver(nsIDocumentViewer::eContinue);
   } else {
-    RefPtr docShell = nsDocShell::Cast(aTraversable->GetDocShell());
-    aResolver(docShell->MaybeFireTraversableTraverseHistory(
-        MOZ_KnownLive(aLoadState.get()), Nothing()));
+    DispatchNavigateToTraversable(aTraversable.get(), aLoadState, aResolver);
   }
   return IPC_OK();
+}
+
+/* static */ void ContentChild::DispatchNavigateToTraversable(
+    BrowsingContext* aTraversable,
+    const mozilla::NotNull<RefPtr<nsDocShellLoadState>>& aLoadState,
+    const DispatchNavigateToTraversableResolver& aResolver) {
+  RefPtr docShell = nsDocShell::Cast(aTraversable->GetDocShell());
+  if (!docShell) {
+    aResolver(nsIDocumentViewer::eContinue);
+    return;
+  }
+  aResolver(docShell->MaybeFireTraversableTraverseHistory(
+      MOZ_KnownLive(aLoadState.get()), Nothing()));
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(

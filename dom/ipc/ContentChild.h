@@ -853,6 +853,12 @@ class ContentChild final : public PContentChild,
           aLoadState,
       const DispatchBeforeUnloadToSubtreeResolver& aResolver);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  static void DispatchNavigateToTraversable(
+      BrowsingContext* aTraversable,
+      const mozilla::NotNull<RefPtr<nsDocShellLoadState>>& aLoadState,
+      const DispatchNavigateToTraversableResolver& aResolver);
+
   hal::ProcessPriority GetProcessPriority() const { return mProcessPriority; }
 
   hal::PerformanceHintSession* PerformanceHintSession() const {
