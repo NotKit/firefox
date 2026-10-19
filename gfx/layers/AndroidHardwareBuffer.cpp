@@ -4,7 +4,15 @@
 
 #include "AndroidHardwareBuffer.h"
 
-#include <android/sync.h>
+#ifdef ANDROID
+#  include <android/sync.h>
+#else
+#  include <linux/sync_file.h>
+#  include <sys/ioctl.h>
+
+#  include <cerrno>
+#  include <cstring>
+#endif
 #include <sys/socket.h>
 
 #include "mozilla/TimeStamp.h"
@@ -16,6 +24,19 @@
 
 namespace mozilla {
 namespace layers {
+
+#ifndef ANDROID
+static int sync_merge(const char* aName, int aFd1, int aFd2) {
+  sync_merge_data data = {};
+  data.fd2 = aFd2;
+  std::strncpy(data.name, aName, sizeof(data.name) - 1);
+  int ret;
+  do {
+    ret = ioctl(aFd1, SYNC_IOC_MERGE, &data);
+  } while (ret < 0 && (errno == EINTR || errno == EAGAIN));
+  return ret < 0 ? ret : data.fence;
+}
+#endif
 
 static uint32_t ToAHardwareBuffer_Format(gfx::SurfaceFormat aFormat) {
   switch (aFormat) {

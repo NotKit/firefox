@@ -162,10 +162,10 @@ extern "C" bool wgpu_server_get_linux_dmabuf_modifiers(const uint64_t**,
   return false;
 }
 
-extern const WGPUVkImageHandle* wgpu_server_get_vk_image_handle(
-    WGPUWebGPUParentPtr, WGPUTextureId) {
+extern ffi::WGPUDMABufInfo wgpu_server_get_dma_buf_info(WGPUWebGPUParentPtr,
+                                                        WGPUTextureId) {
   MOZ_ASSERT_UNREACHABLE("no DMABuf shared textures for the android toolkit");
-  return nullptr;
+  return {};
 }
 #endif
 
