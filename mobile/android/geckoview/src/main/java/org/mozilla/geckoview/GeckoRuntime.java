@@ -435,7 +435,8 @@ public final class GeckoRuntime implements Parcelable {
   private int[] startCrashHelper() {
     // The crashhelper is only available if we were built with
     // `--enable-crash-reporter`.
-    if (!BuildConfig.MOZ_CRASHREPORTER) {
+    if (!BuildConfig.MOZ_CRASHREPORTER
+        || "1".equals(System.getenv("MOZ_CRASHREPORTER_DISABLE"))) {
       return new int[] {-1, -1};
     }
 
