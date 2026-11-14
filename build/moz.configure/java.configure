@@ -104,4 +104,3 @@ def jdk_jni_include_flags(java, target, toolkit, os_cppflags, bindgen_cflags):
         flags.append("-I%s/include/%s" % (jdk, os_dir))
     os_cppflags.extend(flags)
     bindgen_cflags.extend(flags)
-
