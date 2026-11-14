@@ -464,7 +464,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   bool IsReplaced() const { return mIsReplaced; }
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   uint32_t GetAndroidAppLinkLaunchType() const {
     return mAndroidAppLinkLaunchType;
   }
@@ -770,7 +770,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   bool mIsReplaced = false;
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   // App link launch type for the current load; 0 means not an app link.
   // Stored here so it survives process switches and COOP-triggered BC swaps.
   uint32_t mAndroidAppLinkLaunchType = 0;

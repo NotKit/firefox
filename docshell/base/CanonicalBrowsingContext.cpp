@@ -402,7 +402,7 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   BackgroundSessionStorageManager::PropagateManager(Id(), aNewContext->Id());
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   // Transfer the app link launch type to the replacement BC (e.g., COOP swap).
   aNewContext->mAndroidAppLinkLaunchType =
       std::exchange(mAndroidAppLinkLaunchType, 0);

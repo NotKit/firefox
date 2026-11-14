@@ -2457,7 +2457,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       // is created.
       Canonical()->AttemptSpeculativeLoadInParent(aLoadState);
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
       uint32_t appLinkLaunchType = aLoadState->GetAppLinkLaunchType();
       Canonical()->SetAndroidAppLinkLaunchType(appLinkLaunchType);
 
